@@ -259,8 +259,18 @@ properties that do not affect layout:
 | `text-shadow` | `padding`, `margin` |
 | `-webkit-text-stroke` | anything causing reflow |
 
-`font-weight` is excluded because it would force reflow. Faux-bold via
-`-webkit-text-stroke` is possible but does not always look right.
+Anything that changes the box model is ignored — and it is ignored **silently**.
+Measured directly: a rule with  is parsed into the
+CSSOM (every longhand shows up in ) and then has **no effect whatsoever**
+on paint. The highlight stays a sharp-cornered rectangle.
+
+\
+So rounded, padded highlights — the Notion/Medium look — are not reachable through this
+API at all. The only route is wrapping the range in a real element, which reintroduces
+every problem the API exists to avoid.
+
+ is excluded for the same reason: it would force reflow. Faux-bold via
+ is possible but does not always look right.
 
 The upside is large: a range can belong to several highlights at once, so
 `background-color` from one and `text-decoration` from another combine cleanly, and the
