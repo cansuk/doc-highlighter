@@ -164,6 +164,14 @@ __docHL.dump()           // always prints: keys, hash, anchor resolution table
   `pushState` after load can end up keyed under the pre-navigation URL.
 - **Notes, tags and search do not exist yet.**
 
+## Field notes
+
+[**Manifest V3 — Field Notes**](docs/mv3-field-notes.md) collects the things that cost
+hours while building this: silent permission filters, deadlocked dynamic script
+registration, a translation string that made the extension unloadable, and the two
+icons only one of which changes. Every entry was hit in this build and verified in the
+browser.
+
 ## Roadmap
 
 - Chrome Web Store release
