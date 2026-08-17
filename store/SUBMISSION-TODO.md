@@ -17,6 +17,28 @@ Live tracking of the listing. Update as fields are filled.
 | Store icon 128×128 | `store/listing-icon-128.png` | ✅ 96×96 artwork + 16px transparent padding, per Google's rule |
 | Short description | `store/listing-en.txt` (top block) | 100 / 132 characters |
 | Detailed description | `store/listing-en.txt` (bottom block) | 3,167 / 16,000 characters |
+| Small promo tile 440×280 | `store/promo-small-440x280.png` | ✅ generated, 24-bit, no alpha |
+| Marquee promo tile 1400×560 | `store/promo-marquee-1400x560.png` | ✅ generated, 24-bit, no alpha |
+
+Both tiles are produced by `npm run promo` (`tools/build-promo.mjs`), which asserts
+size, channel count and absence of an alpha channel before it exits.
+
+---
+
+## Asset format audit
+
+Measured, not assumed:
+
+| File | Size | Format | Channels | Alpha | Rule |
+|---|---|---|---|---|---|
+| `screenshot-2-local.jpg` | 1280×800 | JPEG | 3 | no | screenshot |
+| `screenshot-1-web.jpg` | 1280×800 | JPEG | 3 | no | screenshot |
+| `promo-small-440x280.png` | 440×280 | PNG | 3 | no | small tile |
+| `promo-marquee-1400x560.png` | 1400×560 | PNG | 3 | no | marquee tile |
+| `listing-icon-128.png` | 128×128 | PNG | 4 | **yes** | store icon |
+
+The store icon is the one asset where alpha is correct — the transparent 16px margin
+is what Google asks for. The no-alpha rule applies only to screenshots and promo tiles.
 
 ---
 

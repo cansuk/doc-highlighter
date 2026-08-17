@@ -6,6 +6,7 @@
   "description": "Chrome extension — persistent highlighting for local .md/.html files and the web",
   "scripts": {
     "icons": "node tools/build-icons.mjs",
+    "promo": "node tools/build-promo.mjs",
     "pack": "node tools/pack.mjs",
     "check:i18n": "node tools/check-i18n.mjs",
     "test": "node tools/test-engine.mjs",
