@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Doc Highlighter — highlight local .md and .html files</title>
+<meta name="description" content="A Chrome extension that highlights local Markdown and HTML files as well as the web. Your marks come back, and nothing leaves your device.">
+<style>
+  :root {
+    --bg: #ffffff;
+    --panel: #f7f8fa;
+    --ink: #1f2937;
+    --muted: #5b6675;
+    --line: #e3e6ea;
+    --brand: #ffc933;
+    --accent: #b45309;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161c24; --panel: #1f2937; --ink: #e8ecf1;
+      --muted: #9aa6b4; --line: #2d3947; --accent: #ffc933;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #161c24; --panel: #1f2937; --ink: #e8ecf1;
+    --muted: #9aa6b4; --line: #2d3947; --accent: #ffc933;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.65 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 54rem; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+  a { color: var(--accent); }
+
+  /* hero */
+  .hero { display: flex; align-items: flex-start; gap: 1.25rem; margin-bottom: 1.5rem; }
+  .mark {
+    width: 76px; height: 76px; border-radius: 17px; background: var(--brand);
+    display: grid; place-items: center; flex: none;
+  }
+  .mark svg { width: 44px; height: 44px; }
+  h1 { font-size: 2.35rem; line-height: 1.1; letter-spacing: -.025em; margin: .15rem 0 .35rem; }
+  .tag { color: var(--muted); font-size: 1.12rem; margin: 0; }
+
+  .swatches { display: flex; gap: .5rem; margin: 1.75rem 0 2rem; }
+  .swatches i { width: 22px; height: 22px; border-radius: 50%; display: block; }
+
+  .cta { display: flex; flex-wrap: wrap; gap: .7rem; margin: 0 0 3rem; }
+  .btn {
+    display: inline-block; padding: .7rem 1.25rem; border-radius: 8px;
+    font-weight: 600; font-size: .95rem; text-decoration: none;
+    border: 1px solid var(--line); color: var(--ink); background: var(--panel);
+  }
+  .btn.primary { background: var(--brand); border-color: var(--brand); color: #1f2937; }
+
+  h2 {
+    font-size: 1.35rem; letter-spacing: -.015em; margin: 3rem 0 1rem;
+    padding-top: 1.75rem; border-top: 1px solid var(--line);
+  }
+  p { margin: 0 0 1rem; }
+  ul { margin: 0 0 1rem; padding-left: 1.25rem; }
+  li { margin: .4rem 0; }
+  code {
+    font: .9em/1 ui-monospace, Consolas, "SF Mono", monospace;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 4px; padding: .12em .38em;
+  }
+
+  .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 1.1rem 1.2rem; }
+  .card h3 { margin: 0 0 .4rem; font-size: 1rem; letter-spacing: -.01em; }
+  .card p { margin: 0; color: var(--muted); font-size: .93rem; }
+
+  figure { margin: 1.5rem 0; }
+  figure img {
+    width: 100%; height: auto; display: block;
+    border: 1px solid var(--line); border-radius: 10px;
+  }
+  figcaption { color: var(--muted); font-size: .87rem; margin-top: .55rem; }
+
+  footer {
+    margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
+    color: var(--muted); font-size: .9rem;
+    display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; justify-content: space-between;
+  }
+  footer nav { display: flex; flex-wrap: wrap; gap: 1.25rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1f2937" stroke-width="2.2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="m9 11-6 6v3h9l3-3"/>
+        <path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Doc Highlighter</h1>
+      <p class="tag">Mark up what you read the way you would mark up paper —
+      including the files on your own disk.</p>
+    </div>
+  </div>
+
+  <div class="swatches" aria-hidden="true">
+    <i style="background:#ffd54a"></i><i style="background:#8ee6a8"></i>
+    <i style="background:#ffa8c5"></i><i style="background:#9ecbff"></i>
+    <i style="background:#ff9c47"></i><i style="background:#d9c4ff"></i>
+  </div>
+
+  <div class="cta">
+    <a class="btn primary" href="STORE_URL">Add to Chrome</a>
+    <a class="btn" href="REPO_URL">Source code</a>
+    <a class="btn" href="privacy.html">Privacy</a>
+  </div>
+
+  <h2>What it does</h2>
+
+  <p>Select text, pick a colour or an underline, and it stays. Close the tab, restart the
+  browser, come back a week later — the marks are still there.</p>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Your own files, not just the web</h3>
+      <p>Local <code>.md</code> and <code>.html</code> opened straight from disk: exported
+      documentation, README files, API references, specs.</p>
+    </div>
+    <div class="card">
+      <h3>Nothing leaves your device</h3>
+      <p>No account, no server, no network request anywhere in the extension. Marks are
+      stored locally, and never in a cookie.</p>
+    </div>
+    <div class="card">
+      <h3>Six colours, plus underline</h3>
+      <p>They combine — a passage can be yellow <em>and</em> underlined. Every colour keeps
+      text at WCAG AAA contrast.</p>
+    </div>
+    <div class="card">
+      <h3>Marks survive edits</h3>
+      <p>Each mark remembers the text around it, so it is found again when the document
+      changes. Renaming a local file does not lose it.</p>
+    </div>
+  </div>
+
+  <h2>See it</h2>
+
+  <figure>
+    <img src="screenshot-local.jpg" alt="A local Markdown file open from disk with several coloured highlights and an underline">
+    <figcaption>A local <code>.md</code> file opened straight from disk. Note the
+    <code>file://</code> address — no server, no upload, no account.</figcaption>
+  </figure>
+
+  <figure>
+    <img src="screenshot-web.jpg" alt="The same highlighting working on a documentation page on the web">
+    <figcaption>The same engine on the web, with inline <code>code</code> chips covered
+    edge to edge.</figcaption>
+  </figure>
+
+  <h2>Turning it on where you need it</h2>
+
+  <ul>
+    <li><strong>Local files</strong> — Chrome keeps this behind its own switch. Open the
+    extension's details page and turn on <em>Allow access to file URLs</em>. The extension
+    cannot do this for you; only you can.</li>
+    <li><strong>Websites</strong> — click the toolbar icon and choose <em>Enable on this
+    site</em> or <em>Enable on all sites</em>. Revocable from the same place, at any time.</li>
+  </ul>
+
+  <p>Because website access is optional, installing the extension shows no permission
+  warning at all.</p>
+
+  <h2>Requirements and limits</h2>
+
+  <ul>
+    <li>Chrome 105 or newer</li>
+    <li>Chrome does not let any extension run on <code>chrome://</code> pages, the Web Store,
+    or other extensions' pages</li>
+    <li>Notes, tags and search do not exist yet</li>
+    <li>Some single-page applications rewrite their address after loading, which can make a
+    mark harder to find again</li>
+  </ul>
+
+  <h2>Support</h2>
+
+  <p>Something not working, or an idea for it? Open an issue on
+  <a href="ISSUES_URL">the issue tracker</a>, or write to
+  <a href="mailto:CONTACT_EMAIL">CONTACT_EMAIL</a>.</p>
+
+  <footer>
+    <div>Released under the GPL-3.0 licence.</div>
+    <nav>
+      <a href="privacy.html">Privacy policy</a>
+      <a href="REPO_URL">Source code</a>
+      <a href="ISSUES_URL">Support</a>
+    </nav>
+  </footer>
+
+</div>
+</body>
+</html>

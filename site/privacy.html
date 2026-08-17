@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy — Doc Highlighter</title>
+<meta name="description" content="Doc Highlighter collects no data and makes no network requests. Everything stays on your device.">
+<style>
+  :root {
+    --bg: #ffffff;
+    --panel: #f7f8fa;
+    --ink: #1f2937;
+    --muted: #5b6675;
+    --line: #e3e6ea;
+    --brand: #ffc933;
+    --accent: #b45309;
+    --mark: #ffd54a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #161c24;
+      --panel: #1f2937;
+      --ink: #e8ecf1;
+      --muted: #9aa6b4;
+      --line: #2d3947;
+      --accent: #ffc933;
+      --mark: #8a6d1f;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #161c24;
+    --panel: #1f2937;
+    --ink: #e8ecf1;
+    --muted: #9aa6b4;
+    --line: #2d3947;
+    --accent: #ffc933;
+    --mark: #8a6d1f;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.65 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  .wrap { max-width: 46rem; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+
+  header { display: flex; align-items: center; gap: .85rem; margin-bottom: 2.5rem; }
+  .mark {
+    width: 44px; height: 44px; border-radius: 10px; background: var(--brand);
+    display: grid; place-items: center; flex: none;
+  }
+  .mark svg { width: 26px; height: 26px; }
+  header .name { font-weight: 700; font-size: 1.05rem; letter-spacing: -.01em; }
+  header .sub { color: var(--muted); font-size: .85rem; }
+
+  h1 { font-size: 1.9rem; line-height: 1.2; letter-spacing: -.02em; margin: 0 0 .4rem; }
+  .stamp { color: var(--muted); font-size: .88rem; margin: 0 0 2.25rem; }
+
+  h2 {
+    font-size: 1.12rem; letter-spacing: -.01em; margin: 2.5rem 0 .75rem;
+    padding-top: 1.5rem; border-top: 1px solid var(--line);
+  }
+  h2:first-of-type { border-top: 0; padding-top: 0; }
+  p { margin: 0 0 1rem; }
+  ul { margin: 0 0 1rem; padding-left: 1.25rem; }
+  li { margin: .35rem 0; }
+  strong { font-weight: 650; }
+  a { color: var(--accent); }
+  code {
+    font: .9em/1 ui-monospace, Consolas, "SF Mono", monospace;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 4px; padding: .12em .38em;
+  }
+
+  .lede {
+    background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--brand);
+    border-radius: 8px; padding: 1.1rem 1.25rem; margin: 0 0 2rem;
+  }
+  .lede p:last-child { margin-bottom: 0; }
+
+  .tbl { width: 100%; border-collapse: collapse; margin: 0 0 1.25rem; font-size: .94rem; }
+  .tbl th, .tbl td { text-align: left; padding: .6rem .7rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .tbl th { font-weight: 650; color: var(--muted); font-size: .82rem; text-transform: uppercase; letter-spacing: .04em; }
+  .scroll { overflow-x: auto; }
+
+  footer {
+    margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line);
+    color: var(--muted); font-size: .88rem;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1f2937" stroke-width="2.2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="m9 11-6 6v3h9l3-3"/>
+        <path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/>
+      </svg>
+    </div>
+    <div>
+      <div class="name">Doc Highlighter</div>
+      <div class="sub">Chrome extension</div>
+    </div>
+  </header>
+
+  <h1>Privacy Policy</h1>
+  <p class="stamp">Last updated: 17 August 2026</p>
+
+  <div class="lede">
+    <p><strong>Doc Highlighter collects nothing, transmits nothing, and contacts no server.</strong>
+    There is no account, no sign-in, no analytics and no third party. The extension contains
+    no code that makes a network request.</p>
+    <p>Everything you mark stays on the computer you marked it on.</p>
+  </div>
+
+  <h2>What the extension stores</h2>
+
+  <p>To bring your highlights back when you reopen a document, the extension has to remember
+  where they were. For each highlight it saves, <strong>on your device only</strong>:</p>
+
+  <div class="scroll">
+  <table class="tbl">
+    <tr><th>Stored</th><th>Why it is needed</th></tr>
+    <tr>
+      <td>The text you selected</td>
+      <td>To find the same passage again after the page reloads</td>
+    </tr>
+    <tr>
+      <td>About 32 characters before and after it</td>
+      <td>To find the passage again even if the document is edited and it moves</td>
+    </tr>
+    <tr>
+      <td>Its position in the document</td>
+      <td>Checked first, because it is the cheapest way to relocate a mark</td>
+    </tr>
+    <tr>
+      <td>The colour and underline you chose</td>
+      <td>To draw the mark the way you left it</td>
+    </tr>
+    <tr>
+      <td>The document address and title</td>
+      <td>To know which document a set of marks belongs to</td>
+    </tr>
+    <tr>
+      <td>A fingerprint of the document text</td>
+      <td>So renaming or moving a local file does not lose its marks</td>
+    </tr>
+  </table>
+  </div>
+
+  <p>Being direct about the first row: <strong>the passages you highlight are excerpts of the
+  page you are reading, and they are saved.</strong> That is unavoidable for a highlighter —
+  but they are saved locally and nowhere else.</p>
+
+  <h2>Where it is stored</h2>
+
+  <p>In <code>chrome.storage.local</code>, an area that belongs to the extension on your own
+  machine. Two deliberate choices sit behind that:</p>
+
+  <ul>
+    <li><strong>Not in cookies.</strong> Cookies are attached to requests and sent to servers.
+    Your highlights never are.</li>
+    <li><strong>Not in the page's own storage.</strong> If they lived there, the website could
+    read them and could erase them.</li>
+  </ul>
+
+  <p>It is <em>local</em> storage, not Chrome's sync storage, so your marks are not copied to
+  your Google account and do not travel to your other devices.</p>
+
+  <h2>What is never collected</h2>
+
+  <ul>
+    <li>No browsing history, and no list of the sites you visit</li>
+    <li>No personally identifying information — no name, email, or account of any kind</li>
+    <li>No passwords, form input, or anything you type into a page</li>
+    <li>No analytics, telemetry, usage statistics, crash reports or fingerprinting</li>
+    <li>No advertising identifiers, and nothing is sold or shared with anyone</li>
+  </ul>
+
+  <h2>Permissions, and what each is for</h2>
+
+  <div class="scroll">
+  <table class="tbl">
+    <tr><th>Permission</th><th>Used for</th></tr>
+    <tr><td><code>storage</code></td><td>Keeping your highlights on the device</td></tr>
+    <tr><td><code>activeTab</code></td><td>Reading the current tab's address, only to tell you whether highlighting is available there</td></tr>
+    <tr><td><code>scripting</code></td><td>Turning the highlighter on for a site after you have enabled it</td></tr>
+    <tr><td><code>file:///*</code></td><td>The main purpose: local <code>.md</code> and <code>.html</code> files. Chrome keeps this behind its own switch, which only you can turn on</td></tr>
+    <tr><td><code>*://*/*</code> <em>(optional)</em></td><td>Websites. Never requested at install — only when you press the button in the popup, and revocable the same way</td></tr>
+  </table>
+  </div>
+
+  <h2>You stay in control</h2>
+
+  <ul>
+    <li>Pressing the same colour or underline again removes it.</li>
+    <li>One button clears every highlight on the page, behind a confirmation step.</li>
+    <li>Website access can be withdrawn at any time from the extension's popup, or from
+    <code>chrome://extensions</code>.</li>
+    <li><strong>Uninstalling the extension deletes everything it stored.</strong> Chrome
+    removes the extension's storage area with it; nothing is left behind, because there was
+    never a copy anywhere else.</li>
+  </ul>
+
+  <h2>Children</h2>
+
+  <p>The extension is not directed at children and collects no information from anyone,
+  including children.</p>
+
+  <h2>Changes to this policy</h2>
+
+  <p>If this policy ever changes, the date at the top changes with it. Should a future version
+  of the extension ever need to send anything anywhere, it would be described here first, and
+  it would be optional.</p>
+
+  <h2>Contact</h2>
+
+  <p>Questions about this policy, or about what the extension does:
+  <a href="mailto:CONTACT_EMAIL">CONTACT_EMAIL</a></p>
+
+  <footer>
+    Doc Highlighter is released under the GPL-3.0 licence. Everything described above can be
+    checked against the source code.
+  </footer>
+
+</div>
+</body>
+</html>
