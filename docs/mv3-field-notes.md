@@ -260,17 +260,31 @@ properties that do not affect layout:
 | `-webkit-text-stroke` | anything causing reflow |
 
 Anything that changes the box model is ignored — and it is ignored **silently**.
-Measured directly: a rule with  is parsed into the
-CSSOM (every longhand shows up in ) and then has **no effect whatsoever**
+
+Measured directly: a rule carrying `border-radius: 10px; padding: 8px` is parsed into
+the CSSOM in full — every longhand is present — and then has **no effect whatsoever**
 on paint. The highlight stays a sharp-cornered rectangle.
 
-\
-So rounded, padded highlights — the Notion/Medium look — are not reachable through this
-API at all. The only route is wrapping the range in a real element, which reintroduces
-every problem the API exists to avoid.
+```js
+CSS.highlights.set('probe', new Highlight(range));
+style.textContent = `::highlight(probe){
+  background-color:#00e5ff; border-radius:10px; padding:8px; }`;
 
- is excluded for the same reason: it would force reflow. Faux-bold via
- is possible but does not always look right.
+[...rule.style]
+// → background-color, color,
+//   border-top-left-radius, border-top-right-radius, …
+//   padding-top, padding-right, padding-bottom, padding-left
+//
+// All present in the CSSOM. None of them reach the screen.
+```
+
+So rounded, padded highlights — the Notion/Medium look — are **not reachable through
+this API at all**. The only route is wrapping the range in a real element, which
+reintroduces every problem the API exists to avoid: mutated page structure, nested
+markup across element boundaries, and elements wiped by SPA re-renders.
+
+`font-weight` is excluded for the same reason — it would force reflow. Faux-bold via
+`-webkit-text-stroke` is possible but does not always look right.
 
 The upside is large: a range can belong to several highlights at once, so
 `background-color` from one and `text-decoration` from another combine cleanly, and the

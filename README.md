@@ -164,9 +164,9 @@ __docHL.dump()           // always prints: keys, hash, anchor resolution table
   `pushState` after load can end up keyed under the pre-navigation URL.
 - **Notes, tags and search do not exist yet.**
 - **Highlights are sharp-cornered rectangles, by design.** Rounded corners and padding
-  would require wrapping the text in a real element, which is exactly what this engine
-  avoids. Measured:  parses  and  into the CSSOM
-  and then ignores both at paint time.
+  would require wrapping the text in a real element — exactly what this engine avoids.
+  Measured: `::highlight()` parses `border-radius` and `padding` into the CSSOM and then
+  ignores both at paint time. See [field note 14](docs/mv3-field-notes.md).
 
 ## Field notes
 
