@@ -1,0 +1,89 @@
+=== KISA AÇIKLAMA (en fazla 132 karakter) ===
+
+Lokal .md ve .html dosyalarında ve web'de highlight. İşaretlerin geri gelir — ve cihazından hiç çıkmaz.
+
+
+=== DETAYLI AÇIKLAMA ===
+
+Okuduğunu, kâğıda işaretler gibi işaretle.
+
+Metni seç, bir renk ya da altı çizili seç — kalır. Sekmeyi kapat, tarayıcıyı yeniden
+başlat, bir hafta sonra dön: işaretler yerinde.
+
+
+SADECE WEB'DE DEĞİL, KENDİ DOSYALARINDA DA
+
+Çoğu highlight aracı yalnızca web sayfalarına erişir. Bu, diskinden doğrudan açtığın
+dokümanlarda da çalışır: lokal .md ve .html dosyaları, dışa aktarılmış dokümantasyon,
+README dosyaları, API referansları, çalışma notları ve şartnameler.
+
+Var oluş sebebi bu. Teknik dokümantasyonu çevrimdışı okuyorsan, bunu iyi karşılayan
+başka bir araç yok.
+
+
+HİÇBİR VERİ CİHAZINDAN ÇIKMAZ
+
+Hesap yok. Giriş yok. Sunucu yok. Eklentinin hiçbir yerinde ağ isteği yok.
+
+İşaretlerin kendi makinende, eklentinin kendi alanında saklanır. Çerezde değildir —
+yani hiçbir siteye gönderilmez. Sayfanın kendi deposunda da değildir — yani bir site
+onları okuyamaz ve silemez. Bulut yok, senkron yok, sızacak bir şey yok.
+
+
+ALTI RENK VE ALTI ÇİZİLİ — BİRLİKTE KULLANILABİLİR
+
+Sarı, yeşil, pembe, mavi, turuncu, mor ve ayrı bir altı çizili. Bir bölüm hem sarı hem
+altı çizili olabilir; birine basmak diğerini silmez. Aynı şeye tekrar basmak onu
+kaldırır. Tek bir buton sayfadaki tüm işaretleri temizler, onay adımıyla.
+
+Palet göz kararı değil, ölçülerek seçildi: her renk metni WCAG AAA kontrastında tutar
+ve renkler parlaklık olarak birbirinden ayrık — renk görme eksikliğinde de ayırt
+edilebilsinler diye.
+
+
+SAYFAYI BOZMAZ
+
+İşaretleme, metnini fazladan elementlerle sarmalayarak değil, CSS Custom Highlight API
+ile çizilir. Sayfa düzeni bozulmaz; başlık, liste ve tablo sınırlarını aşan seçimler
+doğru çalışır; kopyaladığın metne bir şey karışmaz.
+
+
+DOKÜMAN DEĞİŞSE DE İŞARETLER KALIR
+
+Her işaret, seçtiğin metni ve çevresindeki kelimeleri hatırlar. Doküman düzenlenip
+bölüm yer değiştirdiğinde, işaret o bağlamı eşleştirerek yeniden bulunur. Metin
+silinmişse işaret atılmaz — bekler, ve metin geri geldiğinde o da geri gelir.
+
+Lokal bir dosyanın adını değiştirmek ya da taşımak da işaretlerini kaybettirmez.
+
+
+GÖMÜLÜ ÇERÇEVELERDE DE ÇALIŞIR
+
+Bazı sayfalar asıl içeriğini gömülü bir çerçevede gösterir. Onlar da desteklenir. Metni
+çok az olan çerçeveler atlanır; böylece reklam ve izleme çerçeveleri hiçbir maliyet
+getirmez.
+
+
+İZİNLER, SADE DİLLE
+
+Kurulum web siteleriyle ilgili hiçbir şey istemez. Erişimi, istediğin anda sen verirsin:
+
+• Lokal dosyalar — Chrome bunu kendi anahtarının arkasında tutar. Eklentinin detay
+  sayfasını açıp "Dosya URL'lerine erişime izin ver" anahtarını aç. Eklenti bunu senin
+  yerine yapamaz; yalnızca sen yapabilirsin.
+
+• Web siteleri — toolbar'daki simgeye tıkla ve "Bu sitede aç" ya da "Tüm sitelerde aç"
+  seç. İstediğin zaman aynı yerden kapatabilirsin.
+
+Eklenti, bulunduğun sekmenin adresini yalnızca orada highlight yapılıp yapılamayacağını
+sana söylemek için okur.
+
+
+GEREKSİNİMLER VE SINIRLAR
+
+• Chrome 105 veya üzeri
+• Chrome hiçbir eklentinin chrome:// sayfalarında, Web Store'da ve diğer eklentilerin
+  sayfalarında çalışmasına izin vermez
+• Not, etiket ve arama henüz yok
+• Bazı tek sayfa uygulamaları yüklendikten sonra adresini değiştirir; bu, bir işaretin
+  yeniden bulunmasını zorlaştırabilir

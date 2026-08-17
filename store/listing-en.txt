@@ -1,0 +1,89 @@
+=== SHORT DESCRIPTION (max 132 characters) ===
+
+Highlight local .md and .html files and the web. Your marks come back — and never leave your device.
+
+
+=== DETAILED DESCRIPTION ===
+
+Mark up what you read the way you would mark up paper.
+
+Select text, pick a colour or an underline, and it stays. Close the tab, restart the
+browser, come back a week later — the marks are still there.
+
+
+WORKS ON YOUR OWN FILES, NOT JUST THE WEB
+
+Most highlighters only reach web pages. This one also works on documents opened
+straight from your disk: local .md and .html files, exported documentation, README
+files, API references, runbooks and specs.
+
+That is the reason it exists. If you read technical documentation offline, nothing else
+covers it well.
+
+
+NOTHING LEAVES YOUR DEVICE
+
+No account. No sign-in. No server. No network request anywhere in the extension.
+
+Your highlights are stored by the extension on your own machine. They are not in a
+cookie, so they are never sent to a website. They are not in the page's own storage, so
+a site cannot read them or wipe them. There is no cloud, no sync, and nothing to leak.
+
+
+SIX COLOURS, PLUS UNDERLINE — AND THEY COMBINE
+
+Yellow, green, pink, blue, orange, purple, and a separate underline. A passage can be
+yellow AND underlined; pressing one never clears the other. Press the same thing again
+to remove it. One button clears every highlight on the page, with a confirmation step.
+
+The palette was chosen by measurement, not by eye: every colour keeps text at WCAG AAA
+contrast, and the colours are kept apart in brightness so they stay distinguishable
+under colour vision deficiency.
+
+
+IT DOES NOT BREAK THE PAGE
+
+Highlighting is drawn with the CSS Custom Highlight API rather than by wrapping your
+text in extra elements. Page layout is not disturbed, selections that span headings,
+lists and tables work correctly, and copied text stays clean.
+
+
+MARKS SURVIVE THE DOCUMENT CHANGING
+
+Each highlight remembers the exact text plus the words around it. When a document is
+edited and the passage moves, the mark is found again by matching that context. If the
+text is deleted, the highlight is not thrown away — it simply waits, and returns if the
+text comes back.
+
+Renaming or moving a local file does not lose your marks either.
+
+
+ALSO WORKS INSIDE EMBEDDED FRAMES
+
+Some pages render their real content in an embedded frame. Those are supported. Frames
+with almost no text are skipped, so ad and tracking frames cost nothing.
+
+
+PERMISSIONS, IN PLAIN LANGUAGE
+
+Installing asks for nothing about websites. Access is granted by you, when you want it:
+
+• Local files — Chrome keeps this behind its own switch. Open the extension's details
+  page and turn on "Allow access to file URLs". The extension cannot do this for you;
+  only you can.
+
+• Websites — open the toolbar popup and choose "Enable on this site" or "Enable on all
+  sites". You can turn it off again the same way, at any time.
+
+The extension reads the address of the tab you are on only to tell you whether
+highlighting is available there.
+
+
+REQUIREMENTS AND LIMITS
+
+• Chrome 105 or newer
+• Chrome does not let any extension work on chrome:// pages, the Web Store, or other
+  extensions' pages
+• Notes, tags and search do not exist yet
+• Some single-page applications rewrite their address after loading, which can make a
+  mark harder to find again
