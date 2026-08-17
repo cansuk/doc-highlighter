@@ -288,7 +288,20 @@ markup across element boundaries, and elements wiped by SPA re-renders.
 
 The upside is large: a range can belong to several highlights at once, so
 `background-color` from one and `text-decoration` from another combine cleanly, and the
-page DOM is never modified.
+page structure is never modified.
+
+**One more measured detail:** the API paints TEXT RUNS, and an inline element's own
+padding and margin are not text runs. Highlighting a whole line that contains `code`
+chips therefore leaves a bare strip on each side of every chip:
+
+| Inline element | Result |
+|---|---|
+| `padding: 6px` | gap on both sides |
+| `padding: 0` | continuous |
+| `margin: 6px` | gap on both sides |
+
+A thick `text-decoration` does not bridge it either. The only fix is to paint the
+element itself — which means touching the DOM, even if only with an attribute.
 
 ---
 

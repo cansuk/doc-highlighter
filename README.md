@@ -28,11 +28,17 @@ Highlights live in `chrome.storage.local`, which belongs to the extension — no
 cookie (cookies are sent to the server on every request) and not in the page's
 `localStorage` (which the site itself can read and wipe).
 
-**It never touches the page DOM.**
+**It never changes the page structure.**
 Painting uses the [CSS Custom Highlight API](https://developer.mozilla.org/en-US/docs/Web/API/CSS_Custom_Highlight_API)
-instead of wrapping text in `<mark>` elements. The page structure stays exactly as the
-site built it: no nested markup when a selection crosses element boundaries, no
-collisions with SPA re-renders, and nothing extra lands in text you copy.
+instead of wrapping text in `<mark>` elements. No nested markup when a selection
+crosses element boundaries, no collisions with SPA re-renders, and nothing extra lands
+in text you copy.
+
+One exception, kept as small as possible: inline elements such as `code` chips carry
+their own padding, and that padding is not a text run, so the highlight API cannot
+paint it — a fully selected line would show bare strips around every chip. Those
+elements get a single styling attribute so the colour runs continuously. No element is
+added, removed or re-parented.
 
 **Marks survive the document changing.**
 Each highlight stores the exact text plus ~32 characters of context on either side.

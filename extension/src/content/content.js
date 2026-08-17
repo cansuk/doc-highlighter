@@ -20,7 +20,7 @@
  *   2  text index   — flattens the DOM to plain text, maps offset <-> node
  *   3  anchoring    — quote (prefix/exact/suffix) + position, with fallbacks
  *   4  storage      — chrome.storage.local; top page doc:<url>, iframe doc:#<hash>
- *   5  render       — CSS Custom Highlight API (DOES NOT TOUCH THE DOM)
+ *   5  render       — CSS Custom Highlight API; page structure is never changed
  *   6  toolbar      — mini toolbar that appears over a selection (shadow DOM)
  *   7  startup
  */
@@ -59,7 +59,7 @@
   function setDebug(on) {
     DEBUG = !!on;
     chrome.storage.local.set({ [DEBUG_KEY]: DEBUG });
-    console.log(`${TAG} tani log'lari ${DEBUG ? 'ACIK' : 'KAPALI'} — sayfayi yenile`);
+    console.log(`${TAG} diagnostic logs ${DEBUG ? 'ON' : 'OFF'} — reload the page`);
     return DEBUG;
   }
 
@@ -477,6 +477,15 @@
       ::highlight(dh-orange)    { background-color: #ff9c47; color: #1f2937; }
       ::highlight(dh-purple)    { background-color: #d9c4ff; color: #1f2937; }
       ::highlight(dh-underline) { text-decoration: underline 2px #e11d48; }
+
+      /* Inline gap fill — see the INLINE GAP FILL note. These paint the ELEMENT,
+         which is the only way to cover its padding; the highlight API cannot. */
+      [data-dh-fill="yellow"] { background-color: #ffd54a !important; color: #1f2937 !important; }
+      [data-dh-fill="green"]  { background-color: #8ee6a8 !important; color: #1f2937 !important; }
+      [data-dh-fill="pink"]   { background-color: #ffa8c5 !important; color: #1f2937 !important; }
+      [data-dh-fill="blue"]   { background-color: #9ecbff !important; color: #1f2937 !important; }
+      [data-dh-fill="orange"] { background-color: #ff9c47 !important; color: #1f2937 !important; }
+      [data-dh-fill="purple"] { background-color: #d9c4ff !important; color: #1f2937 !important; }
     `;
     // ERTELENDI: ::highlight(dh-bold) { -webkit-text-stroke-width: 0.7px; }
     const el = document.createElement('style');
@@ -506,6 +515,65 @@
     else CSS.highlights.delete('dh-underline');
   }
 
+  /* --- INLINE GAP FILL -------------------------------------------------------
+   * ::highlight() paints TEXT RUNS. An inline element's own padding and margin are
+   * not text runs, so they stay unpainted: selecting a whole line that contains
+   * `code` chips leaves a bare strip on each side of every chip.
+   *
+   * Measured, so the reasoning is not guesswork:
+   *   padding: 6px  -> gap on both sides
+   *   padding: 0    -> continuous
+   *   margin: 6px   -> gap on both sides
+   * A thick text-decoration does not bridge it either (also measured).
+   *
+   * The only fix is to paint the element itself. We do NOT wrap anything: an
+   * attribute is set on elements FULLY inside the range, and a stylesheet paints
+   * them. Page structure is untouched, so anchoring, cross-element selections and
+   * copied text are all unaffected.
+   *
+   * Scope is deliberately narrow — only inline-level elements that actually have
+   * horizontal padding or margin, i.e. only the ones that would leave a gap.
+   * Partially covered elements are skipped; painting them whole would colour text
+   * the user did not select.
+   *
+   * No observer loop: watchDom() listens for childList/characterData, not attributes.
+   */
+  const FILL_ATTR = 'data-dh-fill';
+
+  function fillInlineGaps() {
+    for (const el of document.querySelectorAll(`[${FILL_ATTR}]`)) el.removeAttribute(FILL_ATTR);
+
+    for (const h of live.values()) {
+      if (!h.color) continue; // underline alone leaves no gap to fill
+
+      const root = h.range.commonAncestorContainer;
+      const scope = root.nodeType === Node.ELEMENT_NODE ? root : root.parentElement;
+      if (!scope) continue;
+
+      for (const el of scope.querySelectorAll('*')) {
+        if (el.closest(`[${UI_ATTR}]`)) continue;
+        if (!isFullyInside(h.range, el)) continue;
+
+        const cs = getComputedStyle(el);
+        if (!cs.display.startsWith('inline')) continue;
+        const spaced =
+          parseFloat(cs.paddingLeft) || parseFloat(cs.paddingRight) ||
+          parseFloat(cs.marginLeft) || parseFloat(cs.marginRight);
+        if (!spaced) continue;
+
+        el.setAttribute(FILL_ATTR, h.color);
+      }
+    }
+  }
+
+  function isFullyInside(range, el) {
+    try {
+      return range.comparePoint(el, 0) === 0 && range.comparePoint(el, el.childNodes.length) === 0;
+    } catch {
+      return false; // comparePoint throws when the node sits in another tree
+    }
+  }
+
   /** Binds stored anchors to the current DOM. Anything that fails is reported as an orphan. */
   function applyAll(index) {
     live.clear();
@@ -521,6 +589,7 @@
     }
 
     paint();
+    fillInlineGaps();
     // log(), NOT console.warn(): an orphan is not a failure, it is expected
     // behaviour (the page text changed). Left as a warn it landed in the
     // chrome://extensions Errors list and drowned out real errors. The count is
