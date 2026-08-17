@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <title>Doc Highlighter — HTML test sayfası</title>
+  <style>
+    body { max-width: 46rem; margin: 3rem auto; padding: 0 1.5rem;
+           font: 16px/1.7 Georgia, "Times New Roman", serif; color: #1f2937; }
+    h1, h2 { font-family: system-ui, sans-serif; letter-spacing: -0.01em; }
+    h1 { font-size: 1.9rem; margin-bottom: 0.25rem; }
+    h2 { font-size: 1.15rem; margin-top: 2.5rem; color: #4b5563; }
+    code { background: #f3f4f6; padding: 1px 5px; border-radius: 4px;
+           font: 0.9em ui-monospace, Consolas, monospace; }
+    blockquote { margin: 1.5rem 0; padding-left: 1rem; border-left: 3px solid #ffc933;
+                 color: #4b5563; font-style: italic; }
+    .lead { color: #6b7280; }
+    table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; font-size: 0.95rem; }
+    th, td { border: 1px solid #e5e7eb; padding: 0.5rem 0.7rem; text-align: left; }
+    th { background: #f9fafb; font-family: system-ui, sans-serif; }
+  </style>
+</head>
+<body>
+  <h1>HTML test sayfası</h1>
+  <p class="lead">Bu dosya Doc Highlighter'ı denemek için var. İçindeki metinler
+  bilinçli olarak farklı yapılarda: paragraf, liste, tablo, kod, alıntı.</p>
+
+  <h2>Tek element içinde seçim</h2>
+  <p>Bu paragrafın tamamı tek bir metin düğümü içinde duruyor. Highlight'ın en kolay
+  senaryosu budur: seçim başlangıcı ve bitişi aynı element içindedir, anchor tek bir
+  offset çiftiyle ifade edilebilir. Bu cümleyi baştan sona seçmeyi dene.</p>
+
+  <h2>Elementler arası seçim</h2>
+  <p>Zor senaryo şu: seçim <strong>bir elementte başlayıp</strong> başka bir elementte
+  bitiyorsa, DOM wrapping yaklaşımı <em>iç içe geçmiş</em> yapılar üretir ve sayfayı
+  bozar. CSS Custom Highlight API bunu DOM'a hiç dokunmadan çözer. Bu paragrafın
+  ortasından başlayıp aşağıdaki listenin ikinci maddesine kadar sürükleyerek seç.</p>
+
+  <ul>
+    <li>Birinci madde — kısa.</li>
+    <li>İkinci madde — seçimin burada bitmesini dene.</li>
+    <li>Üçüncü madde — bu dışarıda kalsın.</li>
+  </ul>
+
+  <h2>Tekrar eden metin</h2>
+  <p>Anchoring'in en sinsi sorunu: aynı metin sayfada birden çok kez geçtiğinde
+  hangisinin highlight'landığını ayırt etmek. Aşağıdaki üç satırda <code>durum</code>
+  kelimesi üç kez geçiyor ve bağlamları farklı.</p>
+
+  <table>
+    <tr><th>Alan</th><th>Açıklama</th></tr>
+    <tr><td>durum</td><td>Başvurunun mevcut durum bilgisi</td></tr>
+    <tr><td>durum</td><td>Ödemenin durum kodu</td></tr>
+    <tr><td>durum</td><td>Sertifikanın durum geçmişi</td></tr>
+  </table>
+
+  <blockquote>Bir highlight, sayfa yeniden yüklendiğinde aynı yere oturmuyorsa
+  highlight değildir; sadece bir kez görülmüş bir renktir.</blockquote>
+
+  <h2>Uzun metin</h2>
+  <p>Kaydırma gerektiren bir bölge olsun diye buradan aşağısı doldurma metnidir.
+  Sayfa yeniden yüklendiğinde highlight'ın görünür alanın dışında kalması ve
+  kullanıcının onu bulamaması ayrı bir UX sorunudur; ileride "highlight'a git"
+  navigasyonu gerekebilir. Şimdilik yalnızca içerik uzunluğu için buradalar.</p>
+
+  <p>İçerik hash'i test etmek için: bu dosyayı kopyalayıp adını değiştir. Hash aynı
+  kaldığı sürece highlight'lar yeni dosyada da görünmeli. Sonra bu paragrafa bir
+  kelime ekle — hash değişir, o zaman fallback anchoring devreye girmeli.</p>
+</body>
+</html>

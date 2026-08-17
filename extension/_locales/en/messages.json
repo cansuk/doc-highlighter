@@ -1,0 +1,215 @@
+{
+  "extName": {
+    "message": "Doc Highlighter — Local HTML & Markdown",
+    "description": "Extension name shown in Chrome and the Web Store"
+  },
+  "extShortName": {
+    "message": "Highlighter",
+    "description": "Short name for narrow UI surfaces (max ~12 chars)"
+  },
+  "extDescription": {
+    "message": "Highlight and underline local .md and .html files — your marks survive closing the tab."
+  },
+  "actionTitle": {
+    "message": "Doc Highlighter",
+    "description": "Toolbar button tooltip"
+  },
+  "onbTitle": {
+    "message": "Doc Highlighter — Setup"
+  },
+  "onbHeading": {
+    "message": "Doc Highlighter is installed"
+  },
+  "onbLede": {
+    "message": "To work on local <code>.md</code> and <code>.html</code> files it needs <strong>one Chrome permission</strong> that you must enable by hand. For security reasons an extension cannot grant this itself."
+  },
+  "onbStatusChecking": {
+    "message": "Checking status…"
+  },
+  "onbStatusGrantedTitle": {
+    "message": "File access is on"
+  },
+  "onbStatusGrantedDetail": {
+    "message": "The extension can work on local .md and .html files. You can close this tab."
+  },
+  "onbStatusDeniedTitle": {
+    "message": "File access is off"
+  },
+  "onbStatusDeniedDetail": {
+    "message": "Complete the two steps below; this page detects the moment it is enabled."
+  },
+  "onbStepsHeading": {
+    "message": "How to enable it"
+  },
+  "onbStep1": {
+    "message": "Use the button below to open this extension's <em>details page</em>."
+  },
+  "onbBtnOpen": {
+    "message": "Open extension settings"
+  },
+  "onbBtnCopy": {
+    "message": "Copy address"
+  },
+  "onbBtnCopied": {
+    "message": "Copied"
+  },
+  "onbHintChromeUrl": {
+    "message": "$URL$ — <code>chrome://</code> addresses cannot be opened as links, so we use a button.",
+    "placeholders": {
+      "url": {
+        "content": "$1",
+        "example": "<code>chrome://extensions/?id=…</code>"
+      }
+    }
+  },
+  "onbStep2": {
+    "message": "On that page, scroll down and turn on <mark class=\"setting\">Allow access to file URLs</mark>."
+  },
+  "onbStep2Hint": {
+    "message": "Chrome reloads the extension when you flip it; <strong>this tab may refresh, which is normal.</strong> After it refreshes you will see the green confirmation here."
+  },
+  "onbStep3": {
+    "message": "Come back to this tab. Verification happens automatically."
+  },
+  "onbBtnRecheck": {
+    "message": "Check now"
+  },
+  "onbProofHeading": {
+    "message": "Live verification"
+  },
+  "onbProofLede": {
+    "message": "Once the permission is on, open any local file in Chrome (<code>.md</code> or <code>.html</code>). It shows up below the moment the extension can reach that page — a measurement, not a claim."
+  },
+  "onbProofWaiting": {
+    "message": "Has not run on a local file yet."
+  },
+  "onbFoot": {
+    "message": "If you turn the permission off later, the toolbar icon turns grey with a $BADGE$ badge; click it to come back here.",
+    "placeholders": {
+      "badge": {
+        "content": "$1",
+        "example": "<span class=\"badge-sample\">!</span>"
+      }
+    }
+  },
+  "popupTitle": {
+    "message": "Doc Highlighter"
+  },
+  "popupChecking": {
+    "message": "Checking…"
+  },
+  "popupGrantedTitle": {
+    "message": "File access is on"
+  },
+  "popupGrantedDetail": {
+    "message": "Works on local .md and .html files."
+  },
+  "popupDeniedTitle": {
+    "message": "File access is off"
+  },
+  "popupDeniedDetail": {
+    "message": "Cannot work on local files."
+  },
+  "popupBtnFix": {
+    "message": "Enable permission"
+  },
+  "popupBtnGuide": {
+    "message": "Setup guide"
+  },
+  "popupCtxLocalActive": {
+    "message": "This tab is a local file — the extension is active here."
+  },
+  "popupCtxLocalBlocked": {
+    "message": "This tab is a local file, but permission is off so it cannot be reached."
+  },
+  "popupCtxUnsupported": {
+    "message": "Highlighting is not available on this page."
+  },
+  "popupSiteOn": {
+    "message": "Highlighting is enabled here."
+  },
+  "popupSiteOff": {
+    "message": "Highlighting is off here."
+  },
+  "popupBtnSiteEnable": {
+    "message": "Enable on this site"
+  },
+  "popupBtnSiteDisable": {
+    "message": "Disable on this site"
+  },
+  "onbPinHeading": {
+    "message": "Toolbar pin"
+  },
+  "onbPinOnTitle": {
+    "message": "Pinned to the toolbar"
+  },
+  "onbPinOnDetail": {
+    "message": "The icon sits next to the address bar, so you can see status at a glance."
+  },
+  "onbPinOffTitle": {
+    "message": "Not pinned"
+  },
+  "onbPinOffDetail": {
+    "message": "The icon is hidden in the puzzle menu — you cannot see the status colour or open the popup quickly."
+  },
+  "onbPinHow": {
+    "message": "Click the <strong>puzzle piece</strong> icon in the toolbar, find <strong>Doc Highlighter</strong> in the list, then click the <mark class=\"setting\">pin</mark> icon next to it. The details page has a <mark class=\"setting\">Pin to toolbar</mark> switch that does the same thing."
+  },
+  "onbPinNote": {
+    "message": "<strong>Why is there no button here?</strong> Chrome does not let an extension pin itself — there is no API for it, and no manifest key. The toolbar belongs to you. This page can only read the state and detect the moment you pin it."
+  },
+  "onbBtnPinOpen": {
+    "message": "Open details page"
+  },
+  "tbYellow": {
+    "message": "Yellow"
+  },
+  "tbGreen": {
+    "message": "Green"
+  },
+  "tbPink": {
+    "message": "Pink"
+  },
+  "tbUnderline": {
+    "message": "Underline"
+  },
+  "tbBold": {
+    "message": "Bold"
+  },
+  "tbRemove": {
+    "message": "Remove"
+  },
+  "tbReload": {
+    "message": "Extension was reloaded — refresh this page (F5). Your highlights are safe."
+  },
+  "popupAllOn": {
+    "message": "Enabled on all websites."
+  },
+  "popupAllOff": {
+    "message": "Not enabled on websites — only on sites you allow."
+  },
+  "popupBtnAllEnable": {
+    "message": "Enable on all sites"
+  },
+  "popupBtnAllDisable": {
+    "message": "Turn off all sites"
+  },
+  "tbBlue": {
+    "message": "Blue"
+  },
+  "tbOrange": {
+    "message": "Orange"
+  },
+  "tbPurple": {
+    "message": "Purple"
+  },
+  "tbClearAll": {
+    "message": "Clear all highlights on this page"
+  },
+  "tbClearAllArmed": {
+    "message": "Delete all {n}?"
+  },
+  "tbClearAllArmedHint": {
+    "message": "Click again to confirm"
+  }
+}

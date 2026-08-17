@@ -1,0 +1,14 @@
+{
+  "out": "extension/icons",
+  "assetsOut": "assets",
+  "preset": "chrome-extension",
+  "shape": "rounded",
+  "radiusFrac": 0.22,
+  "glyph": { "source": "lucide", "name": "highlighter" },
+  "variants": {
+    "": { "tile": "#FFC933", "ink": "#1F2937" },
+    "-off": { "tile": "#C7CBD1", "ink": "#7A828C" }
+  },
+  "storeIcon": { "out": "store/listing-icon-128.png", "px": 128, "artworkFrac": 0.75 },
+  "naming": "icon{size}{variant}.png"
+}

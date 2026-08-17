@@ -1,0 +1,183 @@
+:root {
+  --bg: #ffffff;
+  --surface: #f6f7f9;
+  --border: #dfe3e8;
+  --text: #1a1c1e;
+  --muted: #5c6470;
+  --accent: #1a73e8;
+  --accent-text: #ffffff;
+  --ok: #137333;
+  --ok-bg: #e6f4ea;
+  --warn: #b06000;
+  --warn-bg: #fef7e0;
+  --err: #c5221f;
+  --err-bg: #fce8e6;
+  --code-bg: #eceff3;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17191c;
+    --surface: #1f2226;
+    --border: #33373d;
+    --text: #e6e8ea;
+    --muted: #9aa3ad;
+    --accent: #8ab4f8;
+    --accent-text: #17191c;
+    --ok: #81c995;
+    --ok-bg: #1e2f24;
+    --warn: #fdd663;
+    --warn-bg: #322a15;
+    --err: #f28b82;
+    --err-bg: #331f1e;
+    --code-bg: #26292e;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+}
+
+h1 { font-size: 26px; margin: 0 0 8px; letter-spacing: -0.01em; }
+h2 { font-size: 15px; margin: 32px 0 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+
+.lede { margin: 0; color: var(--muted); }
+.lede-sm { margin: 0 0 12px; color: var(--muted); font-size: 14px; }
+.hint { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+.muted { color: var(--muted); }
+
+code {
+  background: var(--code-bg);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font: 13px/1.4 ui-monospace, "Cascadia Mono", Consolas, monospace;
+  word-break: break-all;
+}
+
+/* Chrome ayarinin BIREBIR adi. Highlighter sarisiyla isaretli: kullanici
+   chrome://extensions sayfasinda gozuyle tarayacagi metin budur.
+   Renkler her iki temada sabit — gercek bir fosforlu kalem gibi davransin,
+   tema degistiginde "isaretlenmis" hissi kaybolmasin. */
+mark.setting {
+  background: #ffc933;
+  color: #1f2937;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 600;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+/* --- status ------------------------------------------------------------- */
+
+.status {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 24px 0 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.status .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 7px;
+  flex: 0 0 auto;
+  background: var(--muted);
+}
+
+.status-text { display: flex; flex-direction: column; gap: 2px; }
+.status-text span { font-size: 13px; color: var(--muted); }
+
+.status[data-state="granted"] { background: var(--ok-bg); border-color: transparent; }
+.status[data-state="granted"] .dot { background: var(--ok); }
+.status[data-state="granted"] strong { color: var(--ok); }
+
+.status[data-state="denied"] { background: var(--warn-bg); border-color: transparent; }
+.status[data-state="denied"] .dot { background: var(--warn); }
+.status[data-state="denied"] strong { color: var(--warn); }
+
+/* --- steps -------------------------------------------------------------- */
+
+.steps ol { margin: 0; padding: 0 0 0 22px; }
+.steps li { margin: 0 0 20px; }
+.steps li::marker { color: var(--muted); font-variant-numeric: tabular-nums; }
+.step-body p { margin: 0; }
+
+.row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+.btn {
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+.btn:hover { background: var(--surface); }
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: transparent;
+  font-weight: 600;
+}
+.btn-primary:hover { filter: brightness(1.08); background: var(--accent); }
+
+/* granted olunca adimlar solar */
+.steps[data-done="true"] { opacity: 0.45; }
+
+/* --- proof -------------------------------------------------------------- */
+
+.proof-box {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px dashed var(--border);
+  font: 13px/1.5 ui-monospace, "Cascadia Mono", Consolas, monospace;
+  color: var(--muted);
+  word-break: break-all;
+}
+.proof-box[data-state="seen"] {
+  border-style: solid;
+  border-color: transparent;
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+/* --- foot --------------------------------------------------------------- */
+
+.foot { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); }
+.foot p { margin: 0; font-size: 13px; color: var(--muted); }
+
+.badge-sample {
+  display: inline-block;
+  background: var(--err);
+  color: #fff;
+  border-radius: 4px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+/* Pin bolumu — file access status karti ile ayni gorsel dili paylasir. */
+.pin[hidden] { display: none; }
+.pin .status { margin: 0 0 14px; }
+#pin-how[hidden] { display: none; }
+#pin-how p { margin: 0; }

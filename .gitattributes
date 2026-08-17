@@ -1,0 +1,7 @@
+# Normalise line endings across platforms.
+# Without this, Windows checkouts commit CRLF and every file looks changed on Linux/macOS.
+* text=auto eol=lf
+
+# Binary assets must never be touched.
+*.png binary
+*.zip binary

@@ -1,0 +1,86 @@
+<!doctype html>
+<html data-i18n-title="popupTitle">
+<head>
+  <meta charset="utf-8">
+  <title>Doc Highlighter</title>
+  <style>
+    :root {
+      --bg: #fff; --text: #1a1c1e; --muted: #5c6470; --border: #dfe3e8;
+      --ok: #137333; --ok-bg: #e6f4ea; --warn: #b06000; --warn-bg: #fef7e0;
+      --accent: #1a73e8; --accent-text: #fff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #17191c; --text: #e6e8ea; --muted: #9aa3ad; --border: #33373d;
+        --ok: #81c995; --ok-bg: #1e2f24; --warn: #fdd663; --warn-bg: #322a15;
+        --accent: #8ab4f8; --accent-text: #17191c;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      width: 300px; margin: 0; padding: 14px;
+      background: var(--bg); color: var(--text);
+      font: 13px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+    h1 { font-size: 13px; margin: 0 0 10px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+    .status { display: flex; gap: 9px; align-items: flex-start; padding: 10px 12px; border-radius: 8px; }
+    .status[data-state="granted"] { background: var(--ok-bg); }
+    .status[data-state="denied"]  { background: var(--warn-bg); }
+    .dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex: 0 0 auto; background: var(--muted); }
+    .status[data-state="granted"] .dot { background: var(--ok); }
+    .status[data-state="denied"] .dot  { background: var(--warn); }
+    .status strong { display: block; font-size: 13px; }
+    .status[data-state="granted"] strong { color: var(--ok); }
+    .status[data-state="denied"] strong  { color: var(--warn); }
+    .status span { font-size: 12px; color: var(--muted); }
+    .btn {
+      display: block; width: 100%; margin-top: 10px;
+      font: inherit; font-size: 13px; font-weight: 600;
+      padding: 8px 12px; border-radius: 7px; border: 1px solid transparent;
+      background: var(--accent); color: var(--accent-text); cursor: pointer;
+    }
+    .btn:hover { filter: brightness(1.08); }
+    .btn.ghost { background: transparent; color: var(--text); border-color: var(--border); font-weight: 400; }
+    .btn.ghost:hover { filter: none; background: rgba(128,128,128,0.1); }
+    .ctx { margin: 10px 0 0; font-size: 12px; color: var(--muted); word-break: break-all; }
+    [hidden] { display: none !important; }
+    hr { border: 0; border-top: 1px solid var(--border); margin: 14px 0 12px; }
+    .site-origin {
+      font: 12px/1.4 ui-monospace, Consolas, monospace;
+      color: var(--text); word-break: break-all; margin: 0 0 2px;
+    }
+    .site-state { font-size: 12px; color: var(--muted); margin: 0; }
+  </style>
+</head>
+<body>
+  <h1 data-i18n="popupTitle"></h1>
+
+  <div class="status" id="status" data-state="checking">
+    <span class="dot" aria-hidden="true"></span>
+    <div>
+      <strong id="title" data-i18n="popupChecking"></strong>
+      <span id="detail"></span>
+    </div>
+  </div>
+
+  <button class="btn" id="fix" type="button" hidden data-i18n="popupBtnFix"></button>
+  <button class="btn ghost" id="guide" type="button" data-i18n="popupBtnGuide"></button>
+
+  <p class="ctx" id="ctx"></p>
+
+  <section id="site" hidden>
+    <hr>
+    <p class="site-origin" id="site-origin"></p>
+    <p class="site-state" id="site-state"></p>
+    <button class="btn" id="site-toggle" type="button"></button>
+  </section>
+
+  <section id="all-sites">
+    <hr>
+    <p class="site-state" id="all-state"></p>
+    <button class="btn ghost" id="all-toggle" type="button"></button>
+  </section>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

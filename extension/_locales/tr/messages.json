@@ -1,0 +1,215 @@
+{
+  "extName": {
+    "message": "Doc Highlighter — Lokal HTML & Markdown",
+    "description": "Chrome ve Web Store'da gorunen extension adi"
+  },
+  "extShortName": {
+    "message": "Highlighter",
+    "description": "Dar alanlar icin kisa ad (~12 karakter)"
+  },
+  "extDescription": {
+    "message": "Lokal .md ve .html dosyalarında highlight ve underline — sekme kapansa da kalır."
+  },
+  "actionTitle": {
+    "message": "Doc Highlighter",
+    "description": "Toolbar buton tooltip'i"
+  },
+  "onbTitle": {
+    "message": "Doc Highlighter — Kurulum"
+  },
+  "onbHeading": {
+    "message": "Doc Highlighter kuruldu"
+  },
+  "onbLede": {
+    "message": "Lokal <code>.md</code> ve <code>.html</code> dosyalarında çalışabilmesi için Chrome'un <strong>tek bir iznini</strong> elle açman gerekiyor. Bu izin, güvenlik nedeniyle extension tarafından programatik olarak verilemez."
+  },
+  "onbStatusChecking": {
+    "message": "Durum kontrol ediliyor…"
+  },
+  "onbStatusGrantedTitle": {
+    "message": "Dosya erişimi açık"
+  },
+  "onbStatusGrantedDetail": {
+    "message": "Extension lokal .md ve .html dosyalarında çalışabilir. Bu sekmeyi kapatabilirsin."
+  },
+  "onbStatusDeniedTitle": {
+    "message": "Dosya erişimi kapalı"
+  },
+  "onbStatusDeniedDetail": {
+    "message": "Aşağıdaki iki adımı tamamla; bu sayfa açıldığı anı kendisi algılar."
+  },
+  "onbStepsHeading": {
+    "message": "Nasıl açılır"
+  },
+  "onbStep1": {
+    "message": "Aşağıdaki butonla bu extension'ın <em>detay sayfasını</em> aç."
+  },
+  "onbBtnOpen": {
+    "message": "Extension ayarlarını aç"
+  },
+  "onbBtnCopy": {
+    "message": "Adresi kopyala"
+  },
+  "onbBtnCopied": {
+    "message": "Kopyalandı"
+  },
+  "onbHintChromeUrl": {
+    "message": "$URL$ — <code>chrome://</code> adresleri link olarak açılamaz, o yüzden buton kullanıyoruz.",
+    "placeholders": {
+      "url": {
+        "content": "$1",
+        "example": "<code>chrome://extensions/?id=…</code>"
+      }
+    }
+  },
+  "onbStep2": {
+    "message": "Açılan sayfada aşağı kaydır ve <mark class=\"setting\">Dosya URL'lerine erişime izin ver</mark> anahtarını aç."
+  },
+  "onbStep2Hint": {
+    "message": "Anahtarı açtığında Chrome extension'ı yeniden yükler; <strong>bu sekme yenilenebilir, normaldir.</strong> Yenilendikten sonra burada yeşil onayı göreceksin."
+  },
+  "onbStep3": {
+    "message": "Bu sekmeye geri dön. Doğrulama otomatik yapılır."
+  },
+  "onbBtnRecheck": {
+    "message": "Şimdi kontrol et"
+  },
+  "onbProofHeading": {
+    "message": "Canlı doğrulama"
+  },
+  "onbProofLede": {
+    "message": "İzin açıldıktan sonra herhangi bir lokal dosyayı Chrome'da aç (<code>.md</code> veya <code>.html</code>). Extension o sayfaya girebildiği anda aşağıda görünecek — bu, iddia değil ölçümdür."
+  },
+  "onbProofWaiting": {
+    "message": "Henüz hiçbir lokal dosyada çalışmadı."
+  },
+  "onbFoot": {
+    "message": "İzni sonradan kapatırsan toolbar ikonu grileşir ve $BADGE$ rozeti belirir; ikona tıklayıp buraya geri dönebilirsin.",
+    "placeholders": {
+      "badge": {
+        "content": "$1",
+        "example": "<span class=\"badge-sample\">!</span>"
+      }
+    }
+  },
+  "popupTitle": {
+    "message": "Doc Highlighter"
+  },
+  "popupChecking": {
+    "message": "Kontrol ediliyor…"
+  },
+  "popupGrantedTitle": {
+    "message": "Dosya erişimi açık"
+  },
+  "popupGrantedDetail": {
+    "message": "Lokal .md ve .html dosyalarında çalışır."
+  },
+  "popupDeniedTitle": {
+    "message": "Dosya erişimi kapalı"
+  },
+  "popupDeniedDetail": {
+    "message": "Lokal dosyalarda çalışamaz."
+  },
+  "popupBtnFix": {
+    "message": "İzni aç"
+  },
+  "popupBtnGuide": {
+    "message": "Kurulum rehberi"
+  },
+  "popupCtxLocalActive": {
+    "message": "Bu sekme lokal bir dosya — extension burada aktif."
+  },
+  "popupCtxLocalBlocked": {
+    "message": "Bu sekme lokal bir dosya, ama izin kapalı olduğu için erişilemiyor."
+  },
+  "popupCtxUnsupported": {
+    "message": "Bu sayfada highlight yapılamaz."
+  },
+  "popupSiteOn": {
+    "message": "Bu sitede highlight açık."
+  },
+  "popupSiteOff": {
+    "message": "Bu sitede highlight kapalı."
+  },
+  "popupBtnSiteEnable": {
+    "message": "Bu sitede aç"
+  },
+  "popupBtnSiteDisable": {
+    "message": "Bu sitede kapat"
+  },
+  "onbPinHeading": {
+    "message": "Toolbar sabitleme"
+  },
+  "onbPinOnTitle": {
+    "message": "Toolbar'a sabitlenmiş"
+  },
+  "onbPinOnDetail": {
+    "message": "İkon adres çubuğunun yanında duruyor; durumu tek bakışta görebilirsin."
+  },
+  "onbPinOffTitle": {
+    "message": "Sabitlenmemiş"
+  },
+  "onbPinOffDetail": {
+    "message": "İkon puzzle menüsünde gizli — durum rengini göremez, popup'ı hızlıca açamazsın."
+  },
+  "onbPinHow": {
+    "message": "Toolbar'daki <strong>puzzle parçası</strong> simgesine tıkla, listede <strong>Doc Highlighter</strong>'ı bul ve yanındaki <mark class=\"setting\">raptiye</mark> ikonuna bas. Detay sayfasındaki <mark class=\"setting\">Pin to toolbar</mark> anahtarı da aynı işi yapar."
+  },
+  "onbPinNote": {
+    "message": "<strong>Neden burada bir buton yok?</strong> Chrome bir extension'ın kendini sabitlemesine izin vermiyor — ne API var ne de manifest anahtarı. Toolbar senin alanın. Bu sayfa yalnızca durumu okuyabilir ve sabitlediğin anı algılayabilir."
+  },
+  "onbBtnPinOpen": {
+    "message": "Detay sayfasını aç"
+  },
+  "tbYellow": {
+    "message": "Sarı"
+  },
+  "tbGreen": {
+    "message": "Yeşil"
+  },
+  "tbPink": {
+    "message": "Pembe"
+  },
+  "tbUnderline": {
+    "message": "Altı çizili"
+  },
+  "tbBold": {
+    "message": "Kalın"
+  },
+  "tbRemove": {
+    "message": "Sil"
+  },
+  "tbReload": {
+    "message": "Extension yeniden yüklendi — sayfayı yenile (F5). Highlight'ların duruyor."
+  },
+  "popupAllOn": {
+    "message": "Tüm web sitelerinde açık."
+  },
+  "popupAllOff": {
+    "message": "Web sitelerinde kapalı — yalnızca izin verdiğin sitelerde çalışır."
+  },
+  "popupBtnAllEnable": {
+    "message": "Tüm sitelerde aç"
+  },
+  "popupBtnAllDisable": {
+    "message": "Tüm siteleri kapat"
+  },
+  "tbBlue": {
+    "message": "Mavi"
+  },
+  "tbOrange": {
+    "message": "Turuncu"
+  },
+  "tbPurple": {
+    "message": "Mor"
+  },
+  "tbClearAll": {
+    "message": "Bu sayfadaki tüm highlight'ları temizle"
+  },
+  "tbClearAllArmed": {
+    "message": "{n} tanesini sil?"
+  },
+  "tbClearAllArmedHint": {
+    "message": "Onaylamak için tekrar tıkla"
+  }
+}

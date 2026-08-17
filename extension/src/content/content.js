@@ -1,0 +1,1082 @@
+/*
+ * Doc Highlighter — highlight local and web documents, stored on your device.
+ * Copyright (C) 2026 cansuk
+ *
+ * This program is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, either version 3 of the License, or (at your option) any later
+ * version. See the LICENSE file, or <https://www.gnu.org/licenses/>.
+ */
+/**
+ * Doc Highlighter — content script
+ *
+ * Being a SINGLE FILE is a constraint, not a preference: MV3 content_scripts do
+ * not support ESM imports (there is no "type":"module"). The alternative is a
+ * dynamic import plus web_accessible_resources, which leaks the extension ID to
+ * the page (fingerprinting). One dependency-free file is safer.
+ *
+ * Sections:
+ *   1  environment check
+ *   2  text index   — flattens the DOM to plain text, maps offset <-> node
+ *   3  anchoring    — quote (prefix/exact/suffix) + position, with fallbacks
+ *   4  storage      — chrome.storage.local; top page doc:<url>, iframe doc:#<hash>
+ *   5  render       — CSS Custom Highlight API (DOES NOT TOUCH THE DOM)
+ *   6  toolbar      — mini toolbar that appears over a selection (shadow DOM)
+ *   7  startup
+ */
+
+(() => {
+  'use strict';
+
+  // --- 1. environment check ----------------------------------------------------
+
+  const isTextish =
+    document.contentType?.startsWith('text/') || document.contentType === 'application/xhtml+xml';
+  if (!isTextish) return;
+
+  if (window.__docHighlighterLoaded) return; // the same tab can be injected twice
+  window.__docHighlighterLoaded = true;
+
+  const TAG = '[Doc Highlighter]';
+  const UI_ATTR = 'data-dh-ui';
+  const DEBUG_KEY = 'dhDebug';
+
+  /* --- diagnostic logs: quiet by default, switchable --------------------------
+   * Informational logs were NOT deleted, they were TURNED OFF. Every persistence
+   * bug ("the highlight vanished", "it does not save") is only diagnosable through
+   * these lines; deleting them means writing them from scratch next time.
+   *
+   * To enable, in the page console:  __docHL.setDebug(true)   then reload
+   *
+   * console.error and user-facing console.warn stay ON at all times — those are
+   * not diagnostics but real failures. dump() always prints too, since it is
+   * invoked by hand.
+   * ------------------------------------------------------------------------- */
+  let DEBUG = false;
+  const log = (...a) => {
+    if (DEBUG) console.log(...a);
+  };
+  function setDebug(on) {
+    DEBUG = !!on;
+    chrome.storage.local.set({ [DEBUG_KEY]: DEBUG });
+    console.log(`${TAG} tani log'lari ${DEBUG ? 'ACIK' : 'KAPALI'} — sayfayi yenile`);
+    return DEBUG;
+  }
+
+  // Without the Custom Highlight API we cannot render at all (Chrome 105+).
+  const HAS_HIGHLIGHT_API = typeof CSS !== 'undefined' && !!CSS.highlights;
+
+  chrome.runtime.sendMessage({ type: 'content-alive', url: location.href }).catch(() => {});
+
+  /**
+   * COLOUR and UNDERLINE ARE INDEPENDENT — one highlight can carry both.
+   *
+   * The previous model had a single `style` field, so applying underline wiped the
+   * colour. New model: { color: 'yellow'|null, underline: true|false }.
+   * Old records are converted by migrate() during load(); no data is lost.
+   *
+   * The ORDER of the original three colours was PRESERVED and new ones appended,
+   * so the user's "first swatch is yellow" muscle memory still holds.
+   */
+  const COLORS = ['yellow', 'green', 'pink', 'blue', 'orange', 'purple'];
+
+  /* ---------------------------------------------------------------------------
+   * BOLD IS ON HOLD (Aug 2026)
+   *
+   * Status: tried by the user, did not work well. The button, its CSS and its
+   *         style entry are commented out. A different approach will be considered.
+   *
+   * Why it is hard: `font-weight` IS NOT SUPPORTED by the CSS Custom Highlight API.
+   *   ::highlight() only accepts paint properties — color, background-color,
+   *   text-decoration, text-shadow, -webkit-text-stroke. font-weight is excluded
+   *   from the spec because it would force reflow.
+   *
+   * Tried: -webkit-text-stroke-width: 0.7px  (faux bold, does not affect layout)
+   *        -> did not produce the desired result.
+   *
+   * Alternatives to evaluate:
+   *   1. text-shadow: 0 0 .4px currentColor — another faux bold; blurrier, but on
+   *      some font/rendering combinations it beats text-stroke.
+   *   2. -webkit-text-stroke and text-shadow together, both at low values.
+   *   3. Colour + contrast: convey emphasis with a darker background-color instead
+   *      of real weight (the only solid route within the API limits).
+   *   4. DOM wrapping (<strong>) — gives REAL bold but was REJECTED: it mutates the
+   *      page structure, produces nested markup for selections that cross element
+   *      boundaries, and collides with SPA re-renders. It contradicts the engine's
+   *      core design decision; reopening it must be a deliberate choice.
+   *
+   * Data note: highlights previously stored with style:'bold' ARE NOT DELETED,
+   * they simply are not painted (paint() skips unknown styles). If bold returns,
+   * those records reappear on their own.
+   * ------------------------------------------------------------------------- */
+
+  const msg = (key, fallback) => chrome.i18n.getMessage(key) || fallback;
+
+  // --- 2. text index -----------------------------------------------------
+
+  /** Flattens the visible DOM text into one string, keeping each text node's range. */
+  function buildIndex() {
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+      acceptNode(n) {
+        if (!n.nodeValue) return NodeFilter.FILTER_REJECT;
+        const p = n.parentElement;
+        if (!p) return NodeFilter.FILTER_REJECT;
+        if (p.closest(`[${UI_ATTR}]`)) return NodeFilter.FILTER_REJECT; // our own UI
+        const tag = p.tagName;
+        if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT') return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    });
+
+    const nodes = [];
+    const byNode = new Map();
+    let text = '';
+
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const entry = { node: n, start: text.length, end: text.length + n.nodeValue.length };
+      text += n.nodeValue;
+      nodes.push(entry);
+      byNode.set(n, entry);
+    }
+
+    return { text, nodes, byNode };
+  }
+
+  /** Global offset -> {node, offset}. Binary search, since nodes are ordered. */
+  function locate(index, offset) {
+    let lo = 0;
+    let hi = index.nodes.length - 1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      const e = index.nodes[mid];
+      if (offset < e.start) hi = mid - 1;
+      else if (offset > e.end) lo = mid + 1;
+      else return { node: e.node, offset: offset - e.start };
+    }
+    return null;
+  }
+
+  /** Selection Range -> global offset pair. Element boundaries are reduced to text nodes. */
+  function rangeToOffsets(index, range) {
+    const edge = (container, offset, atStart) => {
+      if (container.nodeType === Node.TEXT_NODE) {
+        const e = index.byNode.get(container);
+        return e ? e.start + offset : null;
+      }
+      // At an element boundary: descend to the first/last text node inside it.
+      const child = container.childNodes[atStart ? offset : offset - 1];
+      const scope = child ?? container;
+      const w = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
+      let found = null;
+      for (let n = w.nextNode(); n; n = w.nextNode()) {
+        if (index.byNode.has(n)) {
+          found = index.byNode.get(n);
+          if (atStart) break;
+        }
+      }
+      if (!found && index.byNode.has(scope)) found = index.byNode.get(scope);
+      return found ? (atStart ? found.start : found.end) : null;
+    };
+
+    const start = edge(range.startContainer, range.startOffset, true);
+    const end = edge(range.endContainer, range.endOffset, false);
+    return start == null || end == null || end <= start ? null : { start, end };
+  }
+
+  function offsetsToRange(index, start, end) {
+    const a = locate(index, start);
+    const b = locate(index, end);
+    if (!a || !b) return null;
+    const r = document.createRange();
+    try {
+      r.setStart(a.node, a.offset);
+      r.setEnd(b.node, b.offset);
+    } catch {
+      return null;
+    }
+    return r;
+  }
+
+  // --- 3. anchoring ---------------------------------------------------------
+
+  const CTX = 32; // prefix/suffix length
+
+  function makeAnchor(index, start, end) {
+    return {
+      exact: index.text.slice(start, end),
+      prefix: index.text.slice(Math.max(0, start - CTX), start),
+      suffix: index.text.slice(end, Math.min(index.text.length, end + CTX)),
+      start,
+      end,
+    };
+  }
+
+  /**
+   * Locates an anchor in the current text.
+   *
+   * Order: (1) if it still sits exactly at the stored offset, take it — cheapest.
+   *        (2) otherwise find every occurrence of `exact`, score them by
+   *            prefix/suffix overlap plus proximity to the old position, pick the best.
+   * If nothing matches, null -> the highlight counts as an "orphan"; DATA IS KEPT.
+   */
+  function resolveAnchor(index, a) {
+    if (!a?.exact) return null;
+
+    if (index.text.slice(a.start, a.end) === a.exact) return { start: a.start, end: a.end };
+
+    const hits = [];
+    for (let i = index.text.indexOf(a.exact); i !== -1; i = index.text.indexOf(a.exact, i + 1)) {
+      hits.push(i);
+      if (hits.length > 400) break; // stop in pathological cases
+    }
+    if (hits.length === 0) return null;
+
+    let best = null;
+    for (const i of hits) {
+      const pre = index.text.slice(Math.max(0, i - CTX), i);
+      const suf = index.text.slice(i + a.exact.length, i + a.exact.length + CTX);
+      const score =
+        commonSuffixLen(pre, a.prefix) * 2 +
+        commonPrefixLen(suf, a.suffix) * 2 -
+        Math.min(50, Math.abs(i - a.start) / 40);
+      if (!best || score > best.score) best = { score, start: i, end: i + a.exact.length };
+    }
+    return best ? { start: best.start, end: best.end } : null;
+  }
+
+  const commonPrefixLen = (a, b) => {
+    let i = 0;
+    while (i < a.length && i < b.length && a[i] === b[i]) i++;
+    return i;
+  };
+  const commonSuffixLen = (a, b) => {
+    let i = 0;
+    while (i < a.length && i < b.length && a[a.length - 1 - i] === b[b.length - 1 - i]) i++;
+    return i;
+  };
+
+  // --- 4. storage ----------------------------------------------------------
+  // chrome.storage.local: owned by the extension, invisible to the page, never
+  // leaves the device, survives closing the tab or the browser. NOT a cookie and
+  // NOT the page localStorage (a cookie is sent to the server on every request;
+  // the site itself can wipe its own localStorage).
+
+  function normalizeUrl(href) {
+    try {
+      const u = new URL(href);
+      u.hash = '';
+      const junk = /^(utm_|fbclid|gclid|igshid|mc_cid|mc_eid|ref_src|_ga)/i;
+      for (const k of [...u.searchParams.keys()]) if (junk.test(k)) u.searchParams.delete(k);
+      return u.toString();
+    } catch {
+      return href;
+    }
+  }
+
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
+  }
+
+  /**
+   * KEY DESIGN — URL is the primary key, content hash is the secondary index.
+   *
+   * The opposite was tried first (hash as primary) and produced fragmentation: when
+   * the content changed the hash changed, the record was written under a new key
+   * and the old one became garbage. A URL is STABLE for a document; it stays the
+   * same even when the content changes.
+   *
+   *   doc:<normalizedUrl>  -> { url, contentHash, title, updatedAt, highlights[] }
+   *   hash:<contentHash>   -> <normalizedUrl>
+   *
+   * If a file is moved or renamed the URL changes but the hash does not; the hash
+   * index finds the old record and the record is MIGRATED to the new URL (self-heal).
+   */
+  const docKey = (url) => `doc:${url}`;
+  const hashKey = (hash) => `hash:${hash}`;
+
+  /* --- FRAME NOTU -----------------------------------------------------------
+   * Inside an iframe the key strategy is INVERTED.
+   *
+   * Measured cause: Claude artifact pages render their content in a sandboxed
+   * iframe on a separate origin, and that frame's URL changes on every load
+   *   .../?__frame_t=rxKnsYEOTV85xNjkfCgVSbsG.9627765b-...
+   * With the URL as primary key the highlights would vanish on every open and a
+   * garbage record would pile up in storage on every load.
+   *
+   * In a frame the CONTENT is stable and the URL is volatile. On a top-level page
+   * it is the other way round (stable URL, content may change). Hence:
+   *
+   *   top page -> doc:<normalizedUrl>   (hash as secondary index: file moved)
+   *   iframe   -> doc:#<contentHash>    (the URL index is NOT written — it would
+   *                                      only produce garbage)
+   *
+   * Reading the top page URL from inside the frame IS NOT POSSIBLE: a cross-origin
+   * frame cannot access top.location.
+   * ------------------------------------------------------------------------- */
+  const IN_FRAME = window !== window.top;
+  const frameKey = (hash) => `doc:#${hash}`;
+
+  /**
+   * Do no work at all in empty or tiny frames. With allFrames:true the script runs
+   * in dozens of places — ad frames, tracking pixels, empty embeds. Building a text
+   * index and attaching a MutationObserver in each of them is not free.
+   */
+  const MIN_FRAME_TEXT = 100;
+
+  /**
+   * When the extension is reloaded (chrome://extensions -> reload), the content
+   * script in already-open pages becomes a "zombie": it is still on the page, but
+   * every chrome.* API throws "Extension context invalidated". Swallowing that
+   * silently leaves the user clicking with nothing happening.
+   */
+  function contextAlive() {
+    try {
+      return !!chrome.runtime?.id;
+    } catch {
+      return false;
+    }
+  }
+
+  const isInvalidated = (err) => /Extension context invalidated|context invalidated/i.test(err?.message ?? '');
+
+  let state = {
+    hash: null,
+    url: normalizeUrl(location.href),
+    highlights: [], // { id, style, anchor }
+    foundVia: null, // 'hash' | 'url (icerik degismis)' | 'BULUNAMADI'
+  };
+
+  /**
+   * URL and content are tracked together:
+   *   URL  -> "which document"
+   *   hash -> "is it still the same document"
+   * A hash mismatch DOES NOT DELETE anything; it only means re-anchoring is needed.
+   * If the URL does not match but the hash does (file moved or renamed) the record
+   * is still found and the URL index is updated — this is the "as long as the same
+   * content exists" behaviour.
+   */
+  /**
+   * Converts the old single-field record ({style}) to the new model
+   * ({color, underline}).
+   *
+   * Lossless and idempotent. An unknown style (e.g. the on-hold 'bold') is kept
+   * as-is in the color field: it is not in COLORS so it is not painted, but it is
+   * NOT DELETED — if that style returns, the record shows up again by itself.
+   */
+  function migrate(h) {
+    if (h.color !== undefined || h.underline !== undefined) return h;
+    const { style, ...rest } = h;
+    return style === 'underline'
+      ? { ...rest, color: null, underline: true }
+      : { ...rest, color: style ?? null, underline: false };
+  }
+
+  async function load(index) {
+    state.hash = await sha256(index.text.replace(/\s+/g, ' ').trim());
+
+    if (IN_FRAME) {
+      // Frame: the content hash is primary. The URL may be volatile; no index written.
+      const k = frameKey(state.hash);
+      const got = await chrome.storage.local.get(k);
+      let rec = got[k];
+      let via = 'frame-hash';
+
+      // Fallback for frames with a stable URL, and for older records.
+      if (!rec) {
+        const byUrl = await chrome.storage.local.get(docKey(state.url));
+        rec = byUrl[docKey(state.url)];
+        if (rec) via = 'frame-url';
+      }
+
+      state.foundVia = rec ? via : 'BULUNAMADI';
+      state.highlights = (rec?.highlights ?? []).map(migrate);
+      return;
+    }
+
+    // 1) Look up by URL — the common case; finds it even if the content changed.
+    const byUrl = await chrome.storage.local.get(docKey(state.url));
+    let rec = byUrl[docKey(state.url)];
+    let via = 'url';
+
+    // 2) If not found, look up by hash — the file may have been moved or renamed.
+    if (!rec) {
+      const idx = await chrome.storage.local.get(hashKey(state.hash));
+      const mappedUrl = idx[hashKey(state.hash)];
+      if (mappedUrl) {
+        const byHash = await chrome.storage.local.get(docKey(mappedUrl));
+        rec = byHash[docKey(mappedUrl)];
+        via = 'hash (dosya tasinmis)';
+        state.migratedFrom = mappedUrl;
+      }
+    }
+
+    state.foundVia = rec ? via : 'BULUNAMADI';
+    state.highlights = (rec?.highlights ?? []).map(migrate);
+
+    // Found via hash: migrate the record to the new URL and drop the old one (self-heal).
+    if (rec && state.migratedFrom && state.migratedFrom !== state.url) {
+      await save();
+      await chrome.storage.local.remove(docKey(state.migratedFrom));
+      log(`${TAG} kayit tasindi: ${state.migratedFrom} -> ${state.url}`);
+    }
+  }
+
+  async function save() {
+    if (!contextAlive()) return void reportDead();
+
+    const rec = {
+      url: location.href,
+      urlNormalized: state.url,
+      contentHash: state.hash,
+      title: document.title,
+      updatedAt: new Date().toISOString(),
+      highlights: state.highlights,
+    };
+
+    // In a frame the URL index is NOT written: a volatile URL would leave a new
+    // garbage record on every load (see FRAME NOTE).
+    const payload = IN_FRAME
+      ? { [frameKey(state.hash)]: rec }
+      : { [docKey(state.url)]: rec, [hashKey(state.hash)]: state.url };
+
+    try {
+      await chrome.storage.local.set(payload);
+    } catch (err) {
+      if (isInvalidated(err)) return void reportDead();
+      console.error(`${TAG} kaydedilemedi:`, err);
+    }
+  }
+
+  // --- 5. render ------------------------------------------------------------
+  // CSS Custom Highlight API: paints WITHOUT touching the DOM at all. Chosen over
+  // DOM wrapping (<mark>) because it does not mutate the page structure, does not
+  // create nested markup for selections crossing element boundaries, and does not
+  // collide with SPA re-renders.
+
+  const live = new Map(); // id -> { style, range }
+
+  function ensureStyleSheet() {
+    if (document.getElementById('dh-styles')) return;
+    // ::highlight() accepts ONLY paint properties: color, background-color,
+    // text-decoration, text-shadow, -webkit-text-stroke. font-weight IS NOT
+    // SUPPORTED (it would force reflow) — which is why "bold" was attempted as a
+    // faux bold via -webkit-text-stroke. Real font-weight would require wrapping
+    // the DOM in <strong>, which breaks the page structure.
+    // The palette is measured, not eyeballed (tools/check-colors.mjs):
+    //  - every colour reaches WCAG AAA (>= 7:1) against the #1f2937 ink
+    //  - pairwise luminance gaps are kept apart so the colours remain
+    //    distinguishable under colour vision deficiency. On the first attempt pink
+    //    and orange had EXACTLY the same luminance (gap 0.000) — orange was
+    //    darkened to separate them.
+    const css = `
+      ::highlight(dh-yellow)    { background-color: #ffd54a; color: #1f2937; }
+      ::highlight(dh-green)     { background-color: #8ee6a8; color: #1f2937; }
+      ::highlight(dh-pink)      { background-color: #ffa8c5; color: #1f2937; }
+      ::highlight(dh-blue)      { background-color: #9ecbff; color: #1f2937; }
+      ::highlight(dh-orange)    { background-color: #ff9c47; color: #1f2937; }
+      ::highlight(dh-purple)    { background-color: #d9c4ff; color: #1f2937; }
+      ::highlight(dh-underline) { text-decoration: underline 2px #e11d48; }
+    `;
+    // ERTELENDI: ::highlight(dh-bold) { -webkit-text-stroke-width: 0.7px; }
+    const el = document.createElement('style');
+    el.id = 'dh-styles';
+    el.setAttribute(UI_ATTR, '');
+    el.textContent = css;
+    document.head?.appendChild(el) ?? document.documentElement.appendChild(el);
+  }
+
+  /**
+   * Colour and underline are written to SEPARATE highlight registries; one range
+   * can live in both. In the CSS Custom Highlight API a range may belong to several
+   * Highlights, and different properties (background-color vs text-decoration)
+   * combine without conflict — that is how "yellow AND underlined" works.
+   */
+  function paint() {
+    if (!HAS_HIGHLIGHT_API) return;
+
+    for (const key of COLORS) {
+      const ranges = [...live.values()].filter((h) => h.color === key).map((h) => h.range);
+      if (ranges.length) CSS.highlights.set(`dh-${key}`, new Highlight(...ranges));
+      else CSS.highlights.delete(`dh-${key}`);
+    }
+
+    const underlined = [...live.values()].filter((h) => h.underline).map((h) => h.range);
+    if (underlined.length) CSS.highlights.set('dh-underline', new Highlight(...underlined));
+    else CSS.highlights.delete('dh-underline');
+  }
+
+  /** Binds stored anchors to the current DOM. Anything that fails is reported as an orphan. */
+  function applyAll(index) {
+    live.clear();
+    let orphan = 0;
+
+    for (const h of state.highlights) {
+      const hit = resolveAnchor(index, h.anchor);
+      const range = hit && offsetsToRange(index, hit.start, hit.end);
+      // Resolved offsets are kept too: duplicate/overlapping selection detection
+      // (see findOverlapping) is impossible without them.
+      if (range) live.set(h.id, { color: h.color, underline: h.underline, range, start: hit.start, end: hit.end });
+      else orphan++;
+    }
+
+    paint();
+    // log(), NOT console.warn(): an orphan is not a failure, it is expected
+    // behaviour (the page text changed). Left as a warn it landed in the
+    // chrome://extensions Errors list and drowned out real errors. The count is
+    // already visible in the "ready" summary line and in dump().
+    if (orphan) log(`${TAG} ${orphan} highlight bu sayfada bulunamadi (orphan) — veri silinmedi`);
+    return orphan;
+  }
+
+  // --- 6. toolbar -----------------------------------------------------------
+  // Shadow DOM: so the page CSS cannot break the toolbar, and our CSS cannot break the page.
+
+  let host = null;
+  let shadow = null;
+
+  // Lucide "eraser" — ISC, (c) Lucide Icons and Contributors (see NOTICE).
+  const ERASER =
+    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" ' +
+    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0' +
+    'l5.999 6a2 2 0 0 1 0 2.828L12.834 21"/><path d="m5.082 11.09 8.828 8.828"/></svg>';
+
+  function buildToolbar() {
+    host = document.createElement('div');
+    host.setAttribute(UI_ATTR, '');
+    host.style.cssText = 'position:absolute;z-index:2147483647;top:0;left:0;display:none';
+    shadow = host.attachShadow({ mode: 'closed' });
+
+    shadow.innerHTML = `
+      <style>
+        /* The toolbar covers the line ABOVE the selection. A translucent black
+           background plus blur keeps the text behind it readable while the buttons
+           stay crisp. If backdrop-filter is unsupported the plain rgba fill
+           takes over. */
+        .bar { display:flex; gap:4px; align-items:center; padding:5px;
+               background:rgba(18,20,24,.62);
+               -webkit-backdrop-filter:blur(8px) saturate(1.3);
+               backdrop-filter:blur(8px) saturate(1.3);
+               border:1px solid rgba(255,255,255,.14);
+               border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,.28);
+               font:12px system-ui,sans-serif; }
+        button { width:24px; height:24px; border-radius:6px; border:1px solid rgba(255,255,255,.22);
+                 cursor:pointer; padding:0; display:grid; place-items:center; background:transparent; }
+        button:hover { outline:2px solid rgba(255,255,255,.55); }
+        /* Active style: white ring. Colour and underline can be active AT THE SAME TIME. */
+        button.on { outline:2px solid #fff; outline-offset:1px; }
+        .u  { color:#fff; font-size:13px; text-decoration:underline 2px #e11d48; }
+        .b  { color:#fff; font-size:13px; font-weight:800; }
+        .rm { color:#fff; font-size:15px; line-height:1; }
+        .clr{ color:#fff; }
+        .clr svg { display:block; }
+        /* Awaiting confirmation: the button turns into text and takes the danger
+           colour. Native confirm() IS NOT USED — a modal dialog locks the page and
+           is bad behaviour in a content script. A two-step button is enough. */
+        .clr.armed { width:auto; padding:0 9px; gap:5px; font-size:12px; font-weight:600;
+                     background:#c5221f; border-color:transparent; white-space:nowrap; }
+        .sep{ width:1px; height:18px; background:rgba(255,255,255,.25); margin:0 2px; }
+        .bar.dead { color:#ffd54a; padding:8px 12px; max-width:280px; line-height:1.4; }
+      </style>
+      <div class="bar">
+        <button data-color="yellow" style="background:#ffd54a" title="${msg('tbYellow', 'Yellow')}"></button>
+        <button data-color="green"  style="background:#8ee6a8" title="${msg('tbGreen', 'Green')}"></button>
+        <button data-color="pink"   style="background:#ffa8c5" title="${msg('tbPink', 'Pink')}"></button>
+        <button data-color="blue"   style="background:#9ecbff" title="${msg('tbBlue', 'Blue')}"></button>
+        <button data-color="orange" style="background:#ff9c47" title="${msg('tbOrange', 'Orange')}"></button>
+        <button data-color="purple" style="background:#d9c4ff" title="${msg('tbPurple', 'Purple')}"></button>
+        <span class="sep"></span>
+        <button data-act="underline" class="u" title="${msg('tbUnderline', 'Underline')}">U</button>
+        <!-- ERTELENDI (bkz. "BOLD ERTELENDI" notu):
+        <button data-act="bold" class="b" title="${msg('tbBold', 'Bold')}">B</button> -->
+        <span class="sep"></span>
+        <button data-act="clear-all" class="clr" title="${msg('tbClearAll', 'Clear all highlights on this page')}">${ERASER}</button>
+        <button data-act="remove" class="rm" title="${msg('tbRemove', 'Remove')}">×</button>
+      </div>`;
+
+    document.documentElement.appendChild(host);
+
+    shadow.addEventListener('mousedown', (e) => e.preventDefault()); // keep the selection alive
+    shadow.addEventListener('click', onToolbarClick);
+  }
+
+  let pendingRange = null; // range coming from the selection
+  let hoveredId = null; // the existing highlight that was clicked
+  let dead = false; // extension context invalidated
+
+  /**
+   * Zombie state: the extension was reloaded and the script on this page is cut
+   * off. Turns the toolbar into a notice, so the user is not left clicking with
+   * nothing happening.
+   */
+  function reportDead() {
+    if (dead) return;
+    dead = true;
+    console.warn(
+      `${TAG} extension yeniden yuklendi, bu sayfadaki baglanti koptu. ` +
+        `Sayfayi yenile (F5) — kayitli highlight'lar duruyor, kaybolmadi.`,
+    );
+    if (shadow) {
+      const bar = shadow.querySelector('.bar');
+      if (bar) {
+        bar.classList.add('dead');
+        bar.textContent = msg('tbReload', 'Extension reloaded — refresh the page (F5)');
+      }
+    }
+  }
+
+  /**
+   * Places the toolbar above the selection and keeps it INSIDE the viewport.
+   *
+   * The width is measured and clamped: with 6 colours plus underline and delete the
+   * bar grew to ~250px and overflowed the screen for selections near the right
+   * edge. Show first, measure offsetWidth, then position — assuming a fixed number
+   * would be wrong because the width varies with theme and language.
+   */
+  function showToolbar(rect) {
+    host.style.display = 'block';
+
+    const w = host.offsetWidth || 250;
+    const maxLeft = window.scrollX + document.documentElement.clientWidth - w - 8;
+    const left = Math.min(Math.max(window.scrollX + 8, window.scrollX + rect.left), Math.max(8, maxLeft));
+
+    // If there is no room above the selection, place it below — do not clip at the top.
+    const above = window.scrollY + rect.top - 42;
+    const below = window.scrollY + rect.bottom + 8;
+    const top = above < window.scrollY + 4 ? below : above;
+
+    host.style.top = `${top}px`;
+    host.style.left = `${left}px`;
+  }
+
+  function hideToolbar() {
+    if (host) host.style.display = 'none';
+    pendingRange = null;
+    hoveredId = null;
+    disarmClear();
+  }
+
+  /* --- "clear all" two-step confirmation --------------------------------------
+   * Deleting every highlight on the page IS IRREVERSIBLE and must not happen on a
+   * single click. Native confirm() is not used either: a modal dialog locks the page.
+   * Solution: the first click turns the button into "Delete all N?", the second
+   * applies it. If it is not confirmed within 4 seconds it reverts on its own, so it
+   * cannot stay armed and delete on some later click.
+   */
+  let clearArmed = false;
+  let clearTimer = null;
+
+  function disarmClear() {
+    clearArmed = false;
+    clearTimeout(clearTimer);
+    const btn = shadow?.querySelector('[data-act="clear-all"]');
+    if (btn) {
+      btn.classList.remove('armed');
+      btn.innerHTML = ERASER;
+      btn.title = msg('tbClearAll', 'Clear all highlights on this page');
+    }
+  }
+
+  function armClear(count) {
+    const btn = shadow?.querySelector('[data-act="clear-all"]');
+    if (!btn) return;
+    clearArmed = true;
+    btn.classList.add('armed');
+    btn.textContent = msg('tbClearAllArmed', 'Delete all?').replace('{n}', String(count));
+    btn.title = msg('tbClearAllArmedHint', 'Click again to confirm');
+    clearTimeout(clearTimer);
+    clearTimer = setTimeout(disarmClear, 4000);
+  }
+
+  async function onToolbarClick(e) {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+
+    if (btn.dataset.act === 'clear-all') {
+      if (!clearArmed) {
+        if (state.highlights.length === 0) return; // nothing to delete
+        armClear(state.highlights.length);
+        return; // the toolbar STAYS OPEN — the second click is the confirmation
+      }
+      await clearPage();
+      hideToolbar();
+      getSelection()?.removeAllRanges();
+      return;
+    }
+
+    // Pressing any other button cancels a pending clear-all.
+    disarmClear();
+
+    if (btn.dataset.act === 'remove') {
+      if (hoveredId) await removeHighlight(hoveredId);
+      hideToolbar();
+      return;
+    }
+
+    // patch = what should change. Colour and underline are INDEPENDENT: pressing a
+    // colour does not affect the underline, and vice versa.
+    const patch = btn.dataset.color
+      ? { color: btn.dataset.color }
+      : btn.dataset.act === 'underline'
+        ? { underline: true }
+        : null;
+    if (!patch) return;
+
+    if (hoveredId) await patchHighlight(hoveredId, patch);
+    else if (pendingRange) await applyToSelection(pendingRange, patch);
+
+    hideToolbar();
+    getSelection()?.removeAllRanges();
+  }
+
+  /** Shows which colour / underline is ACTIVE on the toolbar. */
+  function markActive(h) {
+    if (!shadow) return;
+    for (const b of shadow.querySelectorAll('button')) {
+      const on = h && ((b.dataset.color && b.dataset.color === h.color) || (b.dataset.act === 'underline' && h.underline));
+      b.classList.toggle('on', !!on);
+    }
+  }
+
+  // --- operations -------------------------------------------------------------
+
+  const byId = (id) => (id ? state.highlights.find((h) => h.id === id) : null);
+
+  const newId = () => `h_${Date.now().toString(36)}_${crypto.randomUUID().slice(0, 8)}`;
+
+  /**
+   * Finds an existing highlight that substantially overlaps the given range.
+   *
+   * A ratio is used instead of exact equality: when the user selects the same text
+   * a second time the boundaries never match exactly (leading/trailing whitespace,
+   * double-click word selection). 75% overlap is enough to count as "the same spot".
+   */
+  function findOverlapping(start, end) {
+    for (const [id, h] of live) {
+      const overlap = Math.min(end, h.end) - Math.max(start, h.start);
+      if (overlap <= 0) continue;
+      const ratio = overlap / Math.min(end - start, h.end - h.start);
+      if (ratio >= 0.75) return { id };
+    }
+    return null;
+  }
+
+  /**
+   * Updates an existing highlight.
+   *
+   *   { color: 'yellow' }  -> REMOVES the colour if it is already yellow, otherwise sets it
+   *   { underline: true }  -> toggles the underline
+   *
+   * Neither erases the other: adding an underline to a yellow highlight keeps the
+   * yellow. If neither a colour nor an underline is left, the highlight has nothing
+   * to show and is deleted.
+   */
+  async function patchHighlight(id, patch) {
+    const h = state.highlights.find((x) => x.id === id);
+    if (!h) return;
+
+    if (patch.color) h.color = h.color === patch.color ? null : patch.color;
+    if (patch.underline) h.underline = !h.underline;
+
+    if (!h.color && !h.underline) {
+      state.highlights = state.highlights.filter((x) => x.id !== id);
+      log(`${TAG} stil kalmadi -> highlight kaldirildi`);
+    }
+
+    await save();
+    applyAll(buildIndex());
+  }
+
+  /** Applies a style to the selection. If a highlight already covers that spot it is updated, not duplicated. */
+  async function applyToSelection(range, patch) {
+    const index = buildIndex();
+    const off = rangeToOffsets(index, range);
+    if (!off) {
+      console.warn(`${TAG} secim cozumlenemedi`);
+      return;
+    }
+
+    const existing = findOverlapping(off.start, off.end);
+    if (existing) return patchHighlight(existing.id, patch);
+
+    const h = {
+      id: newId(),
+      color: patch.color ?? null,
+      underline: !!patch.underline,
+      anchor: makeAnchor(index, off.start, off.end),
+      createdAt: Date.now(),
+    };
+    state.highlights.push(h);
+    await save();
+    applyAll(index);
+    log(`${TAG} highlight eklendi (${h.color ?? '-'}${h.underline ? ' + underline' : ''}):`, h.anchor.exact.slice(0, 40));
+  }
+
+  async function removeHighlight(id) {
+    state.highlights = state.highlights.filter((h) => h.id !== id);
+    await save();
+    applyAll(buildIndex());
+  }
+
+  /**
+   * Deletes EVERY highlight on this page.
+   *
+   * Instead of leaving an empty record behind, the storage KEYS are removed:
+   * otherwise every cleared page would accumulate an empty entry. On a top-level
+   * page both the doc: and hash: keys go; in a frame only the doc:# key (a frame
+   * never writes a URL index — see FRAME NOTE).
+   */
+  async function clearPage() {
+    const n = state.highlights.length;
+    state.highlights = [];
+
+    if (!contextAlive()) return void reportDead();
+
+    try {
+      await chrome.storage.local.remove(
+        IN_FRAME ? [frameKey(state.hash)] : [docKey(state.url), hashKey(state.hash)],
+      );
+    } catch (err) {
+      if (isInvalidated(err)) return void reportDead();
+      console.error(`${TAG} temizlenemedi:`, err);
+      return;
+    }
+
+    applyAll(buildIndex());
+    log(`${TAG} sayfadaki ${n} highlight temizlendi`);
+    return n;
+  }
+
+  /** The Custom Highlight API has no hit testing; point -> highlight mapping is done by hand. */
+  function highlightAt(x, y) {
+    for (const [id, h] of live) {
+      for (const r of h.range.getClientRects()) {
+        if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return id;
+      }
+    }
+    return null;
+  }
+
+  // --- 7. startup ---------------------------------------------------------
+
+  function onMouseUp(e) {
+    if (host?.contains(e.target)) return;
+
+    const sel = getSelection();
+    const hasSelection = sel && !sel.isCollapsed && sel.toString().trim().length > 0;
+
+    if (hasSelection) {
+      pendingRange = sel.getRangeAt(0);
+      hoveredId = null;
+      // If the selection lands on an existing highlight, show its active styles.
+      const idx = buildIndex();
+      const off = rangeToOffsets(idx, pendingRange);
+      markActive(off && byId(findOverlapping(off.start, off.end)?.id));
+      showToolbar(pendingRange.getBoundingClientRect());
+      return;
+    }
+
+    const id = highlightAt(e.clientX, e.clientY);
+    if (id) {
+      hoveredId = id;
+      pendingRange = null;
+      markActive(byId(id));
+      const rects = live.get(id).range.getClientRects();
+      showToolbar(rects[0] ?? { top: e.clientY, left: e.clientX, bottom: e.clientY + 16 });
+      return;
+    }
+
+    hideToolbar();
+  }
+
+  /**
+   * Re-anchor when the DOM changes after load.
+   *
+   * Why it is needed (measured): another extension called "Markdown Reader" on the
+   * user's browser converts .md files to HTML. Our index is built at document_idle;
+   * if that extension renders AFTER us, every range becomes invalid and the
+   * highlights disappear. The same applies to SPAs, lazy loading and infinite scroll.
+   *
+   * Our own UI ([data-dh-ui]) does not trigger it, and because the CSS Custom
+   * Highlight API never touches the DOM, painting cannot re-trigger itself
+   * (no infinite-loop risk).
+   */
+  function watchDom() {
+    let timer = null;
+
+    const observer = new MutationObserver((records) => {
+      const relevant = records.some((r) => {
+        const t = r.target;
+        return !(t.nodeType === Node.ELEMENT_NODE && t.closest?.(`[${UI_ATTR}]`));
+      });
+      if (!relevant) return;
+
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const index = buildIndex();
+        const before = live.size;
+        applyAll(index);
+        if (live.size !== before) {
+          log(`${TAG} DOM degisti -> yeniden baglandi: ${before} -> ${live.size} cizili`);
+        }
+      }, 400); // debounce: wait for the render burst to settle
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+  }
+
+  /**
+   * Manual diagnosis from the page console: __docHL.dump()
+   * Persistence can break in three places — the record is not written, the hash
+   * does not match, or the anchor does not bind. This dump tells the three apart.
+   */
+  async function dump() {
+    const all = await chrome.storage.local.get(null);
+    const docs = Object.keys(all).filter((k) => k.startsWith('doc:'));
+    const hashes = Object.keys(all).filter((k) => k.startsWith('hash:'));
+    const index = buildIndex();
+    const liveHash = await sha256(index.text.replace(/\s+/g, ' ').trim());
+
+    console.group(`${TAG} dump`);
+    console.log('frame mi           :', IN_FRAME ? 'EVET (icerik hash birincil)' : 'hayir (URL birincil)');
+    console.log('kayit anahtari     :', IN_FRAME ? frameKey(state.hash) : docKey(state.url));
+    console.log('bu sayfanin hash i :', liveHash);
+    console.log('init sirasindaki   :', state.hash, liveHash === state.hash ? '(ayni)' : '(DEGISTI!)');
+    console.log('normalize url      :', state.url);
+    console.log('kayit bulundu mu   :', state.foundVia);
+    console.log('yuklenen highlight :', state.highlights.length);
+    console.log('ekranda cizili     :', live.size);
+    console.log("storage doc: anahtarlari :", docs);
+    console.log('storage hash: anahtarlari :', hashes);
+    console.log('kayitli doc URL leri     :', docs.map((k) => k.slice(4)));
+    console.table(
+      state.highlights.map((h) => {
+        const hit = resolveAnchor(index, h.anchor);
+        return {
+          style: h.style,
+          metin: h.anchor.exact.slice(0, 30),
+          kayitli: `${h.anchor.start}-${h.anchor.end}`,
+          bulundu: hit ? `${hit.start}-${hit.end}` : 'ORPHAN',
+        };
+      }),
+    );
+    console.groupEnd();
+    return { liveHash, stateHash: state.hash, docs, hashes, state, dead };
+  }
+
+  async function init() {
+    if (!HAS_HIGHLIGHT_API) {
+      console.error(`${TAG} CSS Custom Highlight API yok (Chrome 105+ gerekli) — render edilemez`);
+      return;
+    }
+
+    try {
+      // Read the diagnostics flag first — every log() below depends on it.
+      try {
+        const v = await chrome.storage.local.get(DEBUG_KEY);
+        DEBUG = v[DEBUG_KEY] === true;
+      } catch {
+        DEBUG = false;
+      }
+      log(`${TAG} yuklendi:`, location.href, `(${document.contentType})`);
+
+      const index = buildIndex();
+
+      // Build nothing in empty or tiny frames — with allFrames:true the script also
+      // runs in ad and tracking frames, and a toolbar plus MutationObserver is not
+      // free. This threshold does not apply to a top-level page.
+      if (IN_FRAME && index.text.trim().length < MIN_FRAME_TEXT) {
+        log(`${TAG} frame atlandi (metin ${index.text.trim().length} karakter):`, location.href);
+        return;
+      }
+
+      ensureStyleSheet();
+      buildToolbar();
+
+      await load(index);
+      const orphan = applyAll(index);
+
+      document.addEventListener('mouseup', onMouseUp);
+      document.addEventListener('scroll', hideToolbar, { passive: true });
+      window.addEventListener('resize', () => applyAll(buildIndex()), { passive: true });
+      document.addEventListener('keydown', (e) => e.key === 'Escape' && hideToolbar());
+
+      watchDom();
+
+      // Diagnostics + test surface. The anchoring functions are exposed as well:
+      // tools/test-engine.mjs verifies them under jsdom, with no browser needed.
+      window.__docHL = {
+        dump,
+        setDebug,
+        state,
+        live,
+        sha256,
+        buildIndex,
+        rangeToOffsets,
+        offsetsToRange,
+        makeAnchor,
+        resolveAnchor,
+        findOverlapping,
+        normalizeUrl,
+        migrate,
+        applyToSelection,
+        patchHighlight,
+        removeHighlight,
+        clearPage,
+        applyAll,
+      };
+
+      // Full state on one line: this tells you at which stage a problem occurs.
+      log(
+        `${TAG} hazir — kayit:${state.foundVia} | yuklenen:${state.highlights.length} ` +
+          `| cizili:${live.size} | orphan:${orphan} | hash:${state.hash} | ${IN_FRAME ? 'IFRAME' : 'top'} | v${chrome.runtime.getManifest().version}`,
+      );
+      log(`${TAG} ayrinti icin: __docHL.dump()`);
+    } catch (err) {
+      // If init half-fails the toolbar never opens and the reason stays invisible.
+      console.error(`${TAG} init BASARISIZ:`, err);
+    }
+  }
+
+  /* --- TANI KOPRUSU ---------------------------------------------------------
+   * A content script runs in an ISOLATED WORLD: window.__docHL is INVISIBLE to
+   * page scripts and to browser automation. That made problems like "why did the
+   * highlight vanish" impossible to diagnose in the browser — the only route was
+   * asking the user to paste console output.
+   *
+   * This bridge publishes NUMERIC DIAGNOSTICS ONLY: counts, key names, state
+   * labels. Highlight TEXT, anchor content and any other page content are NEVER
+   * sent — the page already knows its own text, but it must not learn what the
+   * user marked.
+   *
+   * Usage (page console or automation):
+   *   window.addEventListener('message', e => { if (e.data?.__dochl==='diag-result') console.log(e.data.payload) })
+   *   window.postMessage({ __dochl: 'diag' }, '*')
+   *
+   * THE REPLY COMES BACK VIA postMessage, NOT via a global. Because the content
+   * script lives in an isolated world, writing `window.__dochlDiag = ...` is
+   * INVISIBLE to the page — the first attempt made exactly that mistake and the
+   * bridge silently returned nothing.
+   * ------------------------------------------------------------------------- */
+  window.addEventListener('message', (e) => {
+    if (e.source !== window || e.data?.__dochl !== 'diag') return;
+    const payload = {
+      v: chrome.runtime.getManifest().version,
+      inFrame: IN_FRAME,
+      key: IN_FRAME ? frameKey(state.hash) : docKey(state.url),
+      url: state.url,
+      hash: state.hash,
+      foundVia: state.foundVia,
+      loaded: state.highlights.length,
+      painted: live.size,
+      styles: state.highlights.map((h) => h.style),
+      dead,
+      at: new Date().toISOString(),
+    };
+    window.postMessage({ __dochl: 'diag-result', payload }, '*');
+  });
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();

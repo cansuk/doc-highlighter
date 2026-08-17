@@ -1,0 +1,24 @@
+{
+  "name": "doc-highlighter",
+  "version": "0.8.0",
+  "private": true,
+  "type": "module",
+  "description": "Chrome extension — persistent highlighting for local .md/.html files and the web",
+  "scripts": {
+    "icons": "node tools/build-icons.mjs",
+    "pack": "node tools/pack.mjs",
+    "check:i18n": "node tools/check-i18n.mjs",
+    "test": "node tools/test-engine.mjs",
+    "check:colors": "node tools/check-colors.mjs",
+    "prepack": "npm run check:i18n && npm run check:colors && npm test"
+  },
+  "devDependencies": {
+    "jsdom": "^30.0.1",
+    "sharp": "^0.35.3"
+  },
+  "license": "GPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cansuk/doc-highlighter.git"
+  }
+}

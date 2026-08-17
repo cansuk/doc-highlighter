@@ -1,0 +1,89 @@
+<!doctype html>
+<html data-i18n-title="onbTitle">
+<head>
+  <meta charset="utf-8">
+  <title>Doc Highlighter</title>
+  <link rel="stylesheet" href="onboarding.css">
+</head>
+<body>
+  <main class="wrap">
+    <header class="head">
+      <h1 data-i18n="onbHeading"></h1>
+      <p class="lede" data-i18n-html="onbLede"></p>
+    </header>
+
+    <section class="status" id="status" data-state="checking" aria-live="polite">
+      <span class="dot" aria-hidden="true"></span>
+      <div class="status-text">
+        <strong id="status-title" data-i18n="onbStatusChecking"></strong>
+        <span id="status-detail"></span>
+      </div>
+    </section>
+
+    <section class="steps" id="steps">
+      <h2 data-i18n="onbStepsHeading"></h2>
+
+      <ol>
+        <li>
+          <div class="step-body">
+            <p data-i18n-html="onbStep1"></p>
+            <div class="row">
+              <button id="open-extensions" class="btn btn-primary" type="button" data-i18n="onbBtnOpen"></button>
+              <button id="copy-url" class="btn btn-ghost" type="button" data-i18n="onbBtnCopy"></button>
+            </div>
+            <p class="hint" id="hint-chrome-url"></p>
+          </div>
+        </li>
+
+        <li>
+          <div class="step-body">
+            <p data-i18n-html="onbStep2"></p>
+            <p class="hint" data-i18n-html="onbStep2Hint"></p>
+          </div>
+        </li>
+
+        <li>
+          <div class="step-body">
+            <p data-i18n="onbStep3"></p>
+            <button id="recheck" class="btn btn-ghost" type="button" data-i18n="onbBtnRecheck"></button>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <section class="pin">
+      <h2 data-i18n="onbPinHeading"></h2>
+
+      <div class="status" id="pin-status" data-state="checking" aria-live="polite">
+        <span class="dot" aria-hidden="true"></span>
+        <div class="status-text">
+          <strong id="pin-title" data-i18n="onbStatusChecking"></strong>
+          <span id="pin-detail"></span>
+        </div>
+      </div>
+
+      <div id="pin-how">
+        <p data-i18n-html="onbPinHow"></p>
+        <div class="row">
+          <button id="pin-open" class="btn btn-ghost" type="button" data-i18n="onbBtnPinOpen"></button>
+        </div>
+        <p class="hint" data-i18n-html="onbPinNote"></p>
+      </div>
+    </section>
+
+    <section class="proof" id="proof">
+      <h2 data-i18n="onbProofHeading"></h2>
+      <p class="lede-sm" data-i18n-html="onbProofLede"></p>
+      <div class="proof-box" id="proof-box" data-state="waiting">
+        <span id="proof-text" data-i18n="onbProofWaiting"></span>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <p id="foot-text"></p>
+    </footer>
+  </main>
+
+  <script type="module" src="onboarding.js"></script>
+</body>
+</html>
