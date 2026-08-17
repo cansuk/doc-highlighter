@@ -5,7 +5,15 @@ Your marks come back when you reopen the document.
 
 *[Türkçe dokümantasyon → README.tr.md](README.tr.md)*
 
-<!-- SCREENSHOT: docs/screenshot-1.png -->
+![Highlighting a local Markdown file](docs/img/local-md.png)
+
+*A local `.md` file opened straight from disk — six colours, underline, and colour and
+underline combined. Note the `file://` address: no server, no upload, no account.*
+
+![Highlighting a page on the web](docs/img/web-mdn.png)
+
+*The same engine on the web. Inline `code` chips are covered edge to edge — the
+highlight API paints text runs, so an element's own padding needs filling separately.*
 
 ---
 
