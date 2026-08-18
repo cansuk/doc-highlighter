@@ -184,9 +184,12 @@ function buildStrokes() {
   for (const name of Object.keys(DEFAULTS)) {
     const isRule = name === 'underline';
 
-    const btn = document.createElement('button');
+    // A LABEL, not a button. An <input> inside a <button> is invalid HTML and the
+    // button swallows the click: measured, the input never received it, which is
+    // why the picker needed seven or eight tries to open. A label forwards the
+    // click to its input natively, so one click anywhere on the row is enough.
+    const btn = document.createElement('label');
     btn.className = 'stroke';
-    btn.type = 'button';
     if (isRule) btn.dataset.kind = 'rule';
 
     const mark = document.createElement('span');

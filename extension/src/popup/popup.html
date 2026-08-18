@@ -89,11 +89,13 @@
 
   /* --- colours ------------------------------------------------------------ */
   .strokes { display: flex; flex-direction: column; gap: 2px; }
+  /* A label, not a button: it forwards a click to the input it wraps, which is
+     what makes one click enough. See the note in popup.js. */
   .stroke {
     position: relative; display: flex; align-items: center; gap: 8px;
-    padding: 3px 6px; border-radius: 7px; cursor: pointer; border: 0; background: none;
-    color: inherit; text-align: left; width: 100%;
+    padding: 3px 6px; border-radius: 7px; cursor: pointer; width: 100%;
   }
+  .stroke:focus-within { outline: 2px solid var(--link); outline-offset: 1px; }
   .stroke:hover { background: var(--hi); }
   .stroke .mark { position: relative; flex: none; padding: 2px 5px; font-size: 12.5px; }
   .stroke .mark::before {
