@@ -266,20 +266,8 @@
   "pnlPreview": {
     "message": "Rendered / source"
   },
-  "qmQuick": {
-    "message": "Quick"
-  },
-  "qmPalette": {
-    "message": "Palette"
-  },
-  "qmPlugins": {
-    "message": "Plugins"
-  },
   "qmAbout": {
     "message": "About"
-  },
-  "qmPaletteHint": {
-    "message": "Pick your own colours. The contrast against the text is shown as you choose; below 7:1 it stops meeting WCAG AAA."
   },
   "qmReset": {
     "message": "Restore defaults"
@@ -289,9 +277,6 @@
   },
   "qmContrastOk": {
     "message": "Meets WCAG AAA"
-  },
-  "qmPluginsHint": {
-    "message": "Optional extras, off unless you turn them on."
   },
   "qmTranslate": {
     "message": "Translate"
@@ -313,5 +298,26 @@
   },
   "qmPrivacy": {
     "message": "Privacy policy"
+  },
+  "qmAccess": {
+    "message": "Access"
+  },
+  "qmColours": {
+    "message": "Colours"
+  },
+  "qmAddons": {
+    "message": "Add-ons"
+  },
+  "qmColoursHint": {
+    "message": "Tap a stroke to change it. The number is the contrast against the text — under 7:1 it stops meeting WCAG AAA."
+  },
+  "qmRuleNoRatio": {
+    "message": "A rule under the text, not a wash behind it — the contrast rule does not apply"
+  },
+  "qmAddonsHint": {
+    "message": "Optional extras. Nothing is on unless you turn it on."
+  },
+  "qmLocalOnly": {
+    "message": "Nothing leaves your device"
   }
 }

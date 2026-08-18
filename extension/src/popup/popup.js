@@ -24,14 +24,10 @@ localizeDom();
 
 const REPO = 'https://github.com/cansuk/doc-highlighter';
 
-/* --- rail ------------------------------------------------------------------
- * Tabs, not a scrolling list: the four things this menu does are unrelated to
- * each other, and stacking them would make the one you came for the one you have
- * to scroll past.
- * ------------------------------------------------------------------------- */
+// --- tabs -------------------------------------------------------------------
 
 const panels = [...document.querySelectorAll('[data-panel]')];
-const tabs = [...document.querySelectorAll('.rail button')];
+const tabs = [...document.querySelectorAll('.tab')];
 
 for (const b of tabs) {
   b.addEventListener('click', () => {
@@ -40,12 +36,14 @@ for (const b of tabs) {
   });
 }
 
-// --- quick: local file access -----------------------------------------------
+document.getElementById('version').textContent = `v${chrome.runtime.getManifest().version}`;
+
+// --- access: local files ----------------------------------------------------
 
 const el = {
-  status: document.getElementById('status'),
-  title: document.getElementById('title'),
-  detail: document.getElementById('detail'),
+  fileState: document.getElementById('file-state'),
+  fileTitle: document.getElementById('file-title'),
+  fileDetail: document.getElementById('file-detail'),
   fixBtn: document.getElementById('fix'),
   guideBtn: document.getElementById('guide'),
   ctx: document.getElementById('ctx'),
@@ -59,15 +57,15 @@ const el = {
 
 const granted = await syncFileAccess();
 
-el.status.dataset.state = granted ? 'granted' : 'denied';
+el.fileState.dataset.on = granted ? 'yes' : 'no';
 el.fixBtn.hidden = granted;
-el.title.textContent = t(granted ? 'popupGrantedTitle' : 'popupDeniedTitle');
-el.detail.textContent = t(granted ? 'popupGrantedDetail' : 'popupDeniedDetail');
+el.fileTitle.textContent = t(granted ? 'popupGrantedTitle' : 'popupDeniedTitle');
+el.fileDetail.textContent = t(granted ? 'popupGrantedDetail' : 'popupDeniedDetail');
 
 el.fixBtn.addEventListener('click', () => openExtensionsPage());
 el.guideBtn.addEventListener('click', () => openOnboarding());
 
-// --- quick: active tab ------------------------------------------------------
+// --- access: this tab -------------------------------------------------------
 
 const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 const origin = originPatternFor(tab?.url ?? '');
@@ -79,7 +77,7 @@ async function render() {
 
   el.allState.textContent = t(all ? 'popupAllOn' : 'popupAllOff');
   el.allToggle.textContent = t(all ? 'popupBtnAllDisable' : 'popupBtnAllEnable');
-  el.allToggle.classList.toggle('ghost', all);
+  el.allToggle.classList.toggle('quiet', all);
 
   if (tab?.url?.startsWith('file://')) {
     el.ctx.textContent = t(granted ? 'popupCtxLocalActive' : 'popupCtxLocalBlocked');
@@ -107,7 +105,7 @@ async function render() {
   el.siteOrigin.textContent = new URL(tab.url).host;
   el.siteState.textContent = t(on ? 'popupSiteOn' : 'popupSiteOff');
   el.siteToggle.textContent = t(on ? 'popupBtnSiteDisable' : 'popupBtnSiteEnable');
-  el.siteToggle.classList.toggle('ghost', on);
+  el.siteToggle.classList.toggle('quiet', on);
 }
 
 /**
@@ -138,13 +136,15 @@ el.allToggle.addEventListener('click', async () => {
   await render();
 });
 
-/* --- palette ----------------------------------------------------------------
- * The defaults were chosen by measurement, not by eye: every one clears WCAG AAA
- * against the ink, and they are kept apart in brightness so they stay
- * distinguishable under colour vision deficiency. A custom colour is the user's
- * call — but the contrast is shown as it is picked, and flagged when it drops
- * below AAA, because "my highlights are unreadable" is otherwise discovered later
- * and blamed on the extension.
+/* --- colours ----------------------------------------------------------------
+ * Shown as strokes over sample words rather than as a column of squares: a
+ * highlighter is judged by how text looks THROUGH it, and a swatch cannot tell
+ * you that.
+ *
+ * The rows are built ONCE and then updated in place. Rebuilding them on every
+ * input event destroyed the <input type="color"> that the native picker was
+ * attached to, which slammed the picker shut the moment a colour was touched —
+ * before any choice had been made.
  * ------------------------------------------------------------------------- */
 
 const PALETTE_KEY = 'dhPalette';
@@ -170,78 +170,97 @@ const contrast = (a, b) => {
   return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
 };
 
-const swatchBox = document.getElementById('swatches');
-const sampleLine = document.getElementById('sample-line');
+const strokeBox = document.getElementById('strokes');
 let custom = (await chrome.storage.local.get(PALETTE_KEY))[PALETTE_KEY] ?? {};
-
 const colourOf = (name) => custom[name] || DEFAULTS[name];
 
-function drawPalette() {
-  swatchBox.textContent = '';
+/** name -> { mark, ratio, input } so a change can touch one row, not all of them. */
+const rows = new Map();
+
+function buildStrokes() {
+  strokeBox.textContent = '';
+  rows.clear();
 
   for (const name of Object.keys(DEFAULTS)) {
-    const row = document.createElement('div');
-    row.className = 'swatch';
+    const isRule = name === 'underline';
 
-    const input = document.createElement('input');
-    input.type = 'color';
-    input.value = colourOf(name);
-    input.addEventListener('input', () => setColour(name, input.value));
+    const btn = document.createElement('button');
+    btn.className = 'stroke';
+    btn.type = 'button';
+    if (isRule) btn.dataset.kind = 'rule';
 
-    const label = document.createElement('span');
-    label.className = 'name';
-    label.textContent = t(`tb${name[0].toUpperCase()}${name.slice(1)}`) || name;
+    const mark = document.createElement('span');
+    mark.className = 'mark';
+    const word = document.createElement('em');
+    word.textContent = t(`tb${name[0].toUpperCase()}${name.slice(1)}`) || name;
+    mark.appendChild(word);
 
     const ratio = document.createElement('span');
     ratio.className = 'ratio';
-    if (name === 'underline') {
-      // Underline is a rule drawn under the text, not a background behind it, so
-      // the text-contrast rule does not apply to it.
-      ratio.textContent = '—';
-    } else {
-      const c = contrast(colourOf(name), INK);
-      ratio.textContent = `${c.toFixed(1)}:1`;
-      ratio.classList.toggle('low', c < AAA);
-      ratio.title = c < AAA ? t('qmContrastLow') : t('qmContrastOk');
-    }
 
-    row.append(input, label, ratio);
-    swatchBox.appendChild(row);
-  }
+    // The colour input covers the row and is invisible: the row itself is the
+    // control, and the native picker opens from where the eye already is.
+    const input = document.createElement('input');
+    input.type = 'color';
+    input.className = 'picker';
+    input.value = colourOf(name);
+    input.setAttribute('aria-label', word.textContent);
 
-  drawSample();
-}
+    // input fires continuously while the picker is open, change when it is
+    // committed. Both write, so the page previews live; NEITHER rebuilds the DOM.
+    input.addEventListener('input', () => applyColour(name, input.value));
+    input.addEventListener('change', () => applyColour(name, input.value));
 
-function drawSample() {
-  sampleLine.textContent = '';
-  for (const name of Object.keys(DEFAULTS)) {
-    if (name === 'underline') continue;
-    const m = document.createElement('mark');
-    m.style.background = colourOf(name);
-    m.textContent = ` ${t(`tb${name[0].toUpperCase()}${name.slice(1)}`) || name} `;
-    sampleLine.append(m, ' ');
+    btn.append(mark, ratio, input);
+    strokeBox.appendChild(btn);
+    rows.set(name, { mark, ratio, input });
+    paintRow(name);
   }
 }
 
-async function setColour(name, value) {
+/** Updates one row in place. Never replaces the input element. */
+function paintRow(name) {
+  const row = rows.get(name);
+  if (!row) return;
+  const colour = colourOf(name);
+
+  // The stroke is a ::before, which cannot be styled from JS directly — so the
+  // colour travels through a custom property the rule reads.
+  row.mark.style.setProperty('--c', colour);
+
+  if (name === 'underline') {
+    row.ratio.textContent = '—';
+    row.ratio.className = 'ratio na';
+    row.ratio.title = t('qmRuleNoRatio');
+  } else {
+    const c = contrast(colour, INK);
+    row.ratio.textContent = `${c.toFixed(1)}:1`;
+    row.ratio.className = c < AAA ? 'ratio low' : 'ratio';
+    row.ratio.title = c < AAA ? t('qmContrastLow') : t('qmContrastOk');
+  }
+}
+
+async function applyColour(name, value) {
   custom = { ...custom, [name]: value };
-  // Written straight to storage: the content script listens for the change and
-  // repaints every open page without a reload.
+  paintRow(name);
+  // Straight to storage: the content script listens and repaints every open page,
+  // so the choice is judged on real text while the picker is still open.
   await chrome.storage.local.set({ [PALETTE_KEY]: custom });
-  drawPalette();
 }
 
 document.getElementById('palette-reset').addEventListener('click', async () => {
   custom = {};
   await chrome.storage.local.remove(PALETTE_KEY);
-  drawPalette();
+  for (const [name, row] of rows) {
+    row.input.value = DEFAULTS[name];
+    paintRow(name);
+  }
 });
 
-drawPalette();
+buildStrokes();
 
 // --- about ------------------------------------------------------------------
 
-document.getElementById('version').textContent = `v${chrome.runtime.getManifest().version}`;
 document.getElementById('lnk-src').href = REPO;
 document.getElementById('lnk-bug').href = `${REPO}/issues`;
 document.getElementById('lnk-priv').href = `${REPO}/blob/main/PRIVACY.md`;

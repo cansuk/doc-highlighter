@@ -4,214 +4,191 @@
 <meta charset="utf-8">
 <title>Doc Highlighter</title>
 <style>
+  /* The menu is styled as a marked-up page, because that is what this extension
+     makes. The active tab is not a pill or a rail item — it is a highlighter
+     stroke, drawn slightly crooked and slightly irregular, the way a real one
+     lands. Same for the colour editor: the colours are shown as strokes over
+     sample text rather than as squares, so what you pick is what you will see. */
   :root {
-    --bg: #fff; --rail: #f4f5f7; --panel: #f7f8fa; --hi: #e9ebef;
-    --text: #1a1c1e; --muted: #5c6470; --border: #dfe3e8;
-    --ok: #137333; --ok-bg: #e6f4ea; --warn: #b06000; --warn-bg: #fef7e0;
-    --accent: #1a73e8; --accent-text: #fff; --brand: #ffc933;
+    --paper: #fffdf7; --ink: #1f2937; --muted: #6b7280; --rule: #e7e2d4;
+    --panel: #f6f3ea; --hi: #efe9db;
+    --ok: #137333; --warn: #b06000;
+    --brand: #ffd54a; --link: #b45309;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #17191c; --rail: #1e2126; --panel: #1f2329; --hi: #2a2f36;
-      --text: #e6e8ea; --muted: #9aa3ad; --border: #33373d;
-      --ok: #81c995; --ok-bg: #1e2f24; --warn: #fdd663; --warn-bg: #322a15;
-      --accent: #8ab4f8; --accent-text: #17191c;
+      --paper: #14181d; --ink: #e8ecf1; --muted: #94a1b0; --rule: #2b333d;
+      --panel: #1b2027; --hi: #232b34;
+      --ok: #81c995; --warn: #fdd663;
+      --brand: #ffd54a; --link: #ffc933;
     }
   }
 
   * { box-sizing: border-box; }
   body {
-    width: 384px; margin: 0; display: flex; min-height: 380px;
-    background: var(--bg); color: var(--text);
-    font: 13px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    width: 372px; margin: 0; background: var(--paper); color: var(--ink);
+    font: 13px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
   [hidden] { display: none !important; }
+  button { font: inherit; }
 
-  /* --- rail --------------------------------------------------------------- */
-  .rail {
-    width: 52px; flex: none; background: var(--rail);
-    border-right: 1px solid var(--border);
-    display: flex; flex-direction: column; align-items: center;
-    padding: 10px 0; gap: 4px;
+  /* --- masthead ----------------------------------------------------------- */
+  .top { display: flex; align-items: baseline; gap: 8px; padding: 13px 16px 0; }
+  .wordmark { font-size: 15px; font-weight: 700; letter-spacing: -.02em; position: relative; }
+  /* The product name wears its own product. */
+  .wordmark::before {
+    content: ''; position: absolute; left: -3px; right: -3px; top: 55%; bottom: 4%;
+    background: var(--brand); border-radius: 3px 7px 2px 6px / 5px 2px 6px 3px;
+    transform: rotate(-.5deg); z-index: 0;
   }
-  .rail button {
-    width: 36px; height: 36px; border-radius: 9px; border: 0; padding: 0;
-    background: transparent; color: var(--muted); cursor: pointer;
-    display: grid; place-items: center;
-  }
-  .rail button:hover { background: var(--hi); color: var(--text); }
-  .rail button[aria-selected="true"] { background: var(--accent); color: var(--accent-text); }
-  .rail svg { width: 19px; height: 19px; }
-  .rail .spacer { flex: 1; }
+  .wordmark span { position: relative; z-index: 1; }
+  .ver { margin-left: auto; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 
-  /* --- content ------------------------------------------------------------ */
-  .content { flex: 1; min-width: 0; padding: 14px; display: flex; flex-direction: column; }
-  h2 {
-    font-size: 11px; margin: 0 0 10px; letter-spacing: .06em;
-    text-transform: uppercase; color: var(--muted); font-weight: 650;
+  /* --- tabs --------------------------------------------------------------- */
+  .tabs { display: flex; gap: 2px; padding: 12px 12px 0; border-bottom: 1px solid var(--rule); }
+  .tab {
+    position: relative; border: 0; background: none; cursor: pointer;
+    padding: 5px 9px 9px; color: var(--muted); font-size: 12.5px; font-weight: 550;
   }
+  .tab span { position: relative; z-index: 1; }
+  .tab:hover { color: var(--ink); }
+  .tab[aria-selected="true"] { color: var(--ink); font-weight: 700; }
+  /* The stroke: crooked, uneven corners, overshooting the word slightly. */
+  .tab[aria-selected="true"]::before {
+    content: ''; position: absolute; left: 3px; right: 3px; top: 34%; bottom: 26%;
+    background: var(--brand); border-radius: 2px 7px 3px 6px / 6px 2px 7px 3px;
+    transform: rotate(-.8deg); z-index: 0;
+  }
+
+  main { padding: 14px 16px 16px; min-height: 268px; display: flex; flex-direction: column; }
   .hint { font-size: 12px; color: var(--muted); margin: 0 0 12px; }
 
-  .status { display: flex; gap: 9px; align-items: flex-start; padding: 10px 12px; border-radius: 8px; }
-  .status[data-state="granted"] { background: var(--ok-bg); }
-  .status[data-state="denied"]  { background: var(--warn-bg); }
-  .dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex: none; background: var(--muted); }
-  .status[data-state="granted"] .dot { background: var(--ok); }
-  .status[data-state="denied"] .dot  { background: var(--warn); }
-  .status strong { display: block; font-size: 13px; }
-  .status[data-state="granted"] strong { color: var(--ok); }
-  .status[data-state="denied"] strong  { color: var(--warn); }
-  .status span { font-size: 12px; color: var(--muted); }
+  /* --- access ------------------------------------------------------------- */
+  .state { display: flex; gap: 9px; align-items: baseline; margin: 0 0 4px; }
+  .pip { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--muted); }
+  .state[data-on="yes"] .pip { background: var(--ok); }
+  .state[data-on="no"] .pip { background: var(--warn); }
+  .state strong { font-size: 13px; font-weight: 650; }
+  .state[data-on="yes"] strong { color: var(--ok); }
+  .state[data-on="no"] strong { color: var(--warn); }
+  .sub { font-size: 12px; color: var(--muted); margin: 0 0 10px 16px; }
 
   .btn {
-    display: block; width: 100%; margin-top: 8px;
-    font: inherit; font-size: 13px; font-weight: 600;
-    padding: 8px 12px; border-radius: 7px; border: 1px solid transparent;
-    background: var(--accent); color: var(--accent-text); cursor: pointer;
+    display: block; width: 100%; margin-top: 7px; cursor: pointer;
+    padding: 8px 12px; border-radius: 8px; font-size: 13px; font-weight: 650;
+    border: 1px solid var(--ink); background: var(--ink); color: var(--paper);
   }
-  .btn:hover { filter: brightness(1.08); }
-  .btn.ghost { background: transparent; color: var(--text); border-color: var(--border); font-weight: 500; }
-  .btn.ghost:hover { filter: none; background: var(--hi); }
-  .btn.small { font-size: 12px; padding: 6px 10px; }
+  .btn:hover { opacity: .88; }
+  .btn.quiet { background: transparent; color: var(--ink); border-color: var(--rule); font-weight: 500; }
+  .btn.quiet:hover { opacity: 1; background: var(--hi); }
+  .btn.tiny { font-size: 12px; padding: 6px 10px; margin-top: 12px; }
 
-  .ctx { margin: 10px 0 0; font-size: 12px; color: var(--muted); word-break: break-all; }
-  hr { border: 0; border-top: 1px solid var(--border); margin: 14px 0 10px; }
-  .site-origin { font: 12px/1.4 ui-monospace, Consolas, monospace; word-break: break-all; margin: 0 0 2px; }
-  .site-state { font-size: 12px; color: var(--muted); margin: 0; }
+  .row { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rule); }
+  .host { font: 12px/1.4 ui-monospace, Consolas, monospace; word-break: break-all; margin: 0 0 3px; }
+  .note { font-size: 12px; color: var(--muted); margin: 0; }
 
-  /* --- palette ------------------------------------------------------------ */
-  .swatches { display: flex; flex-direction: column; gap: 6px; }
-  .swatch { display: flex; align-items: center; gap: 9px; }
-  .swatch input[type="color"] {
-    width: 30px; height: 30px; padding: 0; border: 1px solid var(--border);
-    border-radius: 7px; background: none; cursor: pointer; flex: none;
+  /* --- colours ------------------------------------------------------------ */
+  .strokes { display: flex; flex-direction: column; gap: 2px; }
+  .stroke {
+    position: relative; display: flex; align-items: center; gap: 8px;
+    padding: 3px 6px; border-radius: 7px; cursor: pointer; border: 0; background: none;
+    color: inherit; text-align: left; width: 100%;
   }
-  .swatch .name { flex: 1; text-transform: capitalize; }
-  .swatch .ratio {
-    font: 11px/1 ui-monospace, Consolas, monospace; color: var(--muted);
-    font-variant-numeric: tabular-nums;
+  .stroke:hover { background: var(--hi); }
+  .stroke .mark { position: relative; flex: none; padding: 2px 5px; font-size: 12.5px; }
+  .stroke .mark::before {
+    content: ''; position: absolute; inset: 8% -2px 10% -2px;
+    background: var(--c, var(--brand));
+    border-radius: 2px 6px 3px 5px / 5px 2px 6px 3px; transform: rotate(-.5deg); z-index: 0;
   }
-  .swatch .ratio.low { color: var(--warn); font-weight: 700; }
-  .sample {
-    margin-top: 12px; padding: 9px 10px; border-radius: 7px;
-    background: var(--panel); border: 1px solid var(--border); font-size: 12px; line-height: 1.8;
-  }
-  .sample mark { padding: 1px 0; color: #1f2937; }
+  .stroke .mark em { position: relative; z-index: 1; font-style: normal; color: #1f2937; }
+  /* Underline is a rule under the text, not a wash behind it, so it is drawn as one. */
+  .stroke[data-kind="rule"] .mark::before { inset: auto -2px 12% -2px; height: 2px; border-radius: 0; }
+  .stroke[data-kind="rule"] .mark em { color: var(--ink); }
 
-  /* --- plugins ------------------------------------------------------------ */
-  .plugin {
-    border: 1px solid var(--border); border-radius: 9px; padding: 11px 12px;
-    background: var(--panel);
-  }
-  .plugin h3 { margin: 0 0 3px; font-size: 13px; }
-  .plugin p { margin: 0; font-size: 12px; color: var(--muted); }
-  .tag {
-    display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 20px;
-    background: var(--hi); color: var(--muted); font-size: 10px; font-weight: 700;
-    letter-spacing: .04em; text-transform: uppercase; vertical-align: 1px;
+  .ratio { margin-left: auto; font: 11px/1 ui-monospace, Consolas, monospace; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .ratio.low { color: var(--warn); font-weight: 700; }
+  .ratio.na { opacity: .5; }
+  .picker { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+  /* --- add-ons ------------------------------------------------------------ */
+  .card { border: 1px solid var(--rule); border-radius: 10px; padding: 11px 12px; background: var(--panel); }
+  .card h3 { margin: 0 0 3px; font-size: 13px; display: flex; align-items: center; gap: 7px; }
+  .card p { margin: 0; font-size: 12px; color: var(--muted); }
+  .soon {
+    font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+    color: var(--muted); border: 1px solid var(--rule); border-radius: 20px; padding: 1px 7px;
   }
 
   /* --- about -------------------------------------------------------------- */
-  .about { text-align: center; margin: auto 0; }
-  .logo {
-    width: 62px; height: 62px; border-radius: 15px; background: var(--brand);
-    display: grid; place-items: center; margin: 0 auto 10px;
-  }
-  .logo svg { width: 36px; height: 36px; }
-  .about .name { font-size: 17px; font-weight: 700; letter-spacing: -.02em; }
-  .about .tag { display: block; margin: 4px 0 0; background: none; padding: 0;
-                text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 400; }
-  .links {
-    display: inline-flex; gap: 4px; margin: 14px auto 0; padding: 5px;
-    background: var(--panel); border: 1px solid var(--border); border-radius: 22px;
-  }
+  .about { margin: auto 0; }
+  .about p { margin: 0 0 14px; font-size: 12.5px; color: var(--muted); }
+  .links { display: flex; flex-direction: column; gap: 1px; }
   .links a {
-    width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center;
-    color: var(--muted); text-decoration: none;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; border-radius: 8px; text-decoration: none; color: var(--ink); font-size: 12.5px;
   }
-  .links a:hover { background: var(--hi); color: var(--text); }
-  .links svg { width: 17px; height: 17px; }
+  .links a:hover { background: var(--hi); }
+  .links a::after { content: '→'; color: var(--muted); }
   .foot {
-    margin-top: auto; padding-top: 12px; display: flex; justify-content: space-between;
-    font-size: 11px; color: var(--muted);
+    margin-top: auto; padding-top: 12px; border-top: 1px solid var(--rule);
+    display: flex; justify-content: space-between; font-size: 11px; color: var(--muted);
   }
 </style>
 </head>
 <body>
 
-<nav class="rail" role="tablist">
-  <button data-tab="quick" role="tab" aria-selected="true" data-i18n-title="qmQuick">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>
-  </button>
-  <button data-tab="palette" role="tab" aria-selected="false" data-i18n-title="qmPalette">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2"/></svg>
-  </button>
-  <button data-tab="plugins" role="tab" aria-selected="false" data-i18n-title="qmPlugins">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/></svg>
-  </button>
-  <span class="spacer"></span>
-  <button data-tab="about" role="tab" aria-selected="false" data-i18n-title="qmAbout">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-  </button>
+<div class="top">
+  <span class="wordmark"><span>Doc Highlighter</span></span>
+  <span class="ver" id="version"></span>
+</div>
+
+<nav class="tabs" role="tablist">
+  <button class="tab" data-tab="access"  role="tab" aria-selected="true"><span data-i18n="qmAccess"></span></button>
+  <button class="tab" data-tab="colours" role="tab" aria-selected="false"><span data-i18n="qmColours"></span></button>
+  <button class="tab" data-tab="addons"  role="tab" aria-selected="false"><span data-i18n="qmAddons"></span></button>
+  <button class="tab" data-tab="about"   role="tab" aria-selected="false"><span data-i18n="qmAbout"></span></button>
 </nav>
 
-<main class="content">
+<main>
 
-  <!-- QUICK ---------------------------------------------------------------- -->
-  <section data-panel="quick">
-    <h2 data-i18n="qmQuick"></h2>
-
-    <div class="status" id="status" data-state="checking">
-      <span class="dot" aria-hidden="true"></span>
-      <div>
-        <strong id="title" data-i18n="popupChecking"></strong>
-        <span id="detail"></span>
-      </div>
+  <!-- ACCESS --------------------------------------------------------------- -->
+  <section data-panel="access">
+    <div class="state" id="file-state" data-on="?">
+      <span class="pip" aria-hidden="true"></span>
+      <strong id="file-title" data-i18n="popupChecking"></strong>
     </div>
+    <p class="sub" id="file-detail"></p>
 
     <button class="btn" id="fix" type="button" hidden data-i18n="popupBtnFix"></button>
-    <button class="btn ghost" id="guide" type="button" data-i18n="popupBtnGuide"></button>
+    <button class="btn quiet" id="guide" type="button" data-i18n="popupBtnGuide"></button>
 
-    <p class="ctx" id="ctx"></p>
+    <p class="note" id="ctx" style="margin-top:10px"></p>
 
-    <section id="site" hidden>
-      <hr>
-      <p class="site-origin" id="site-origin"></p>
-      <p class="site-state" id="site-state"></p>
+    <div class="row" id="site" hidden>
+      <p class="host" id="site-origin"></p>
+      <p class="note" id="site-state"></p>
       <button class="btn" id="site-toggle" type="button"></button>
-    </section>
-
-    <section id="all-sites">
-      <hr>
-      <p class="site-state" id="all-state"></p>
-      <button class="btn ghost" id="all-toggle" type="button"></button>
-    </section>
-  </section>
-
-  <!-- PALETTE -------------------------------------------------------------- -->
-  <section data-panel="palette" hidden>
-    <h2 data-i18n="qmPalette"></h2>
-    <p class="hint" data-i18n="qmPaletteHint"></p>
-
-    <div class="swatches" id="swatches"></div>
-
-    <div class="sample">
-      <span id="sample-line"></span>
     </div>
 
-    <button class="btn ghost small" id="palette-reset" type="button" data-i18n="qmReset"></button>
+    <div class="row">
+      <p class="note" id="all-state"></p>
+      <button class="btn quiet" id="all-toggle" type="button"></button>
+    </div>
   </section>
 
-  <!-- PLUGINS -------------------------------------------------------------- -->
-  <section data-panel="plugins" hidden>
-    <h2 data-i18n="qmPlugins"></h2>
-    <p class="hint" data-i18n="qmPluginsHint"></p>
+  <!-- COLOURS -------------------------------------------------------------- -->
+  <section data-panel="colours" hidden>
+    <p class="hint" data-i18n="qmColoursHint"></p>
+    <div class="strokes" id="strokes"></div>
+    <button class="btn quiet tiny" id="palette-reset" type="button" data-i18n="qmReset"></button>
+  </section>
 
-    <div class="plugin">
-      <h3>
-        <span data-i18n="qmTranslate"></span>
-        <span class="tag" data-i18n="qmSoon"></span>
-      </h3>
+  <!-- ADD-ONS -------------------------------------------------------------- -->
+  <section data-panel="addons" hidden>
+    <p class="hint" data-i18n="qmAddonsHint"></p>
+    <div class="card">
+      <h3><span data-i18n="qmTranslate"></span><span class="soon" data-i18n="qmSoon"></span></h3>
       <p data-i18n="qmTranslateDesc"></p>
     </div>
   </section>
@@ -219,34 +196,17 @@
   <!-- ABOUT ---------------------------------------------------------------- -->
   <section data-panel="about" hidden>
     <div class="about">
-      <div class="logo" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#1f2937" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="m9 11-6 6v3h9l3-3"/>
-          <path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/>
-        </svg>
-      </div>
-      <div class="name">Doc Highlighter</div>
-      <span class="tag" data-i18n="qmTagline"></span>
-
+      <p data-i18n="qmTagline"></p>
       <div class="links">
-        <a id="lnk-src" href="#" target="_blank" rel="noreferrer" data-i18n-title="qmSource">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.54-3.88-1.54-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.2 1.77 1.2 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.2-1.5 3.17-1.18 3.17-1.18.63 1.59.23 2.76.12 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.4-5.25 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5"/></svg>
-        </a>
-        <a id="lnk-bug" href="#" target="_blank" rel="noreferrer" data-i18n-title="qmIssues">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 2 1.88 1.88"/><path d="M14.12 3.88 16 2"/><path d="M9 7.13v-1a3.003 3.003 0 1 1 6 0v1"/><path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6"/><path d="M6 13H2"/><path d="M22 13h-4"/><path d="m19 6-2.5 2"/><path d="m5 6 2.5 2"/><path d="m19 20-2.5-2"/><path d="m5 20 2.5-2"/></svg>
-        </a>
-        <a id="lnk-priv" href="#" target="_blank" rel="noreferrer" data-i18n-title="qmPrivacy">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
-        </a>
-        <a id="lnk-guide" href="#" data-i18n-title="popupBtnGuide">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
-        </a>
+        <a id="lnk-src" href="#" target="_blank" rel="noreferrer" data-i18n="qmSource"></a>
+        <a id="lnk-bug" href="#" target="_blank" rel="noreferrer" data-i18n="qmIssues"></a>
+        <a id="lnk-priv" href="#" target="_blank" rel="noreferrer" data-i18n="qmPrivacy"></a>
+        <a id="lnk-guide" href="#" data-i18n="popupBtnGuide"></a>
       </div>
     </div>
-
     <div class="foot">
       <span>GPL-3.0</span>
-      <span id="version"></span>
+      <span data-i18n="qmLocalOnly"></span>
     </div>
   </section>
 
