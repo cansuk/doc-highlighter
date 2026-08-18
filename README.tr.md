@@ -1,11 +1,12 @@
-# Doc Highlighter — Local HTML & Markdown · v0.8.1
+# Doc Highlighter — Local HTML & Markdown · v0.9.0
 
 Lokal `.md` / `.html` dosyalarında ve izin verdiğin web sitelerinde highlight ve
 underline; sekme kapansa da kalıcı.
 
 | Sürüm | Ne geldi |
 |---|---|
-| **0.8.1** | `minimum_chrome_version: 105` — eski Chrome artık kurulumu reddediyor. Öncesinde kurulabiliyor ama `CSS.highlights` olmadığı için sessizce çalışmıyordu |
+| **0.9.0** | **Navigator paneli** — sol/sag kenara yaslanan, acilip kapanan panel. Bir sekmede dokuman iskeleti (icindekiler), digerinde tum highlight listesi; tiklayinca o noktaya kayiyor ve kisa sureli bir cerceve ciziliyor. Ham `.md` dosyalarinda basliklar `#` sozdiziminden cikariliyor (DOM'da baslik yok). Acik/koyu tema ve panel tarafi hatirlaniyor |
+| 0.8.1 | `minimum_chrome_version: 105` — eski Chrome artık kurulumu reddediyor. Öncesinde kurulabiliyor ama `CSS.highlights` olmadığı için sessizce çalışmıyordu |
 | 0.8.0 | **Tümünü temizle** butonu — silgi ikonu, iki adımlı onay. Storage kaydını da siliyor |
 | 0.7.0 | **Renk ve underline birlikte verilebiliyor** — ayrı alanlar oldu, eski kayıtlar otomatik geçiyor. Araç çubuğu yarı saydam (arkadaki metin okunuyor) ve aktif stili gösteriyor |
 | 0.6.0 | **Altı renk** (mavi, turuncu, mor eklendi) — palet kontrast ve renk körlüğü için ölçüldü. Araç çubuğu artık viewport dışına taşmıyor |

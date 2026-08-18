@@ -62,6 +62,33 @@ const rows = Object.entries(colors).map(([name, hex]) => {
   return { renk: name, hex, luminance: lum(hex).toFixed(3), kontrast: `${c.toFixed(2)}:1` };
 });
 
+/*
+ * 3. PALETTE ile CSS AYNI OLMALI. Panel cipleri hex degerlerini CSS'ten degil
+ *    PALETTE sabitinden okuyor; ayni renk iki yerde yaziliyor. Cogaltma ancak
+ *    bir denetim onu bagliyorsa guvenli — burasi o denetim.
+ */
+const paletteBlock = source.match(/const PALETTE = \{([\s\S]*?)\};/);
+if (!paletteBlock) {
+  console.error('content.js icinde PALETTE sabiti bulunamadi — regex bayatlamis olabilir');
+  process.exit(1);
+}
+const palette = Object.fromEntries(
+  [...paletteBlock[1].matchAll(/(\w+):\s*'(#[0-9a-fA-F]{6})'/g)].map((m) => [m[1], m[2]]),
+);
+
+const paletteProblems = [];
+for (const [name, hex] of Object.entries(colors)) {
+  if (name === 'underline') continue;
+  if (!palette[name]) paletteProblems.push(`PALETTE'te ${name} yok (CSS'te var)`);
+  else if (palette[name].toLowerCase() !== hex.toLowerCase()) {
+    paletteProblems.push(`${name}: PALETTE ${palette[name]} != CSS ${hex}`);
+  }
+}
+for (const name of Object.keys(palette)) {
+  if (!colors[name]) paletteProblems.push(`CSS'te ${name} yok (PALETTE'te var)`);
+}
+problems.push(...paletteProblems);
+
 const names = Object.keys(colors);
 let closest = { gap: Infinity, pair: '' };
 for (let i = 0; i < names.length; i++) {
@@ -74,7 +101,7 @@ for (let i = 0; i < names.length; i++) {
   }
 }
 
-console.log(`ink: ${ink}  |  renk: ${names.length}`);
+console.log(`ink: ${ink}  |  renk: ${names.length}  |  PALETTE: ${Object.keys(palette).length} (CSS ile eslesiyor)`);
 console.table(rows);
 console.log(`en yakin cift: ${closest.pair} — luminance farki ${closest.gap.toFixed(3)}`);
 

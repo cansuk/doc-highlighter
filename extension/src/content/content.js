@@ -22,7 +22,8 @@
  *   4  storage      — chrome.storage.local; top page doc:<url>, iframe doc:#<hash>
  *   5  render       — CSS Custom Highlight API; page structure is never changed
  *   6  toolbar      — mini toolbar that appears over a selection (shadow DOM)
- *   7  startup
+ *   7  navigator    — docked outline + highlight list, click to jump (shadow DOM)
+ *   8  startup
  */
 
 (() => {
@@ -79,6 +80,20 @@
    * so the user's "first swatch is yellow" muscle memory still holds.
    */
   const COLORS = ['yellow', 'green', 'pink', 'blue', 'orange', 'purple'];
+
+  /**
+   * The same six colours as data. The ::highlight rules below carry these hex
+   * values too; tools/check-colors.mjs fails the build if the two ever disagree,
+   * which is what makes the duplication safe.
+   */
+  const PALETTE = {
+    yellow: '#ffd54a',
+    green: '#8ee6a8',
+    pink: '#ffa8c5',
+    blue: '#9ecbff',
+    orange: '#ff9c47',
+    purple: '#d9c4ff',
+  };
 
   /* ---------------------------------------------------------------------------
    * BOLD IS ON HOLD (Aug 2026)
@@ -486,6 +501,16 @@
       [data-dh-fill="blue"]   { background-color: #9ecbff !important; color: #1f2937 !important; }
       [data-dh-fill="orange"] { background-color: #ff9c47 !important; color: #1f2937 !important; }
       [data-dh-fill="purple"] { background-color: #d9c4ff !important; color: #1f2937 !important; }
+
+      /* Focus frame shown after jumping from the navigator panel. A frame cannot be
+         drawn with ::highlight() — that API ignores border and outline — so this
+         animates a real, short-lived overlay element instead. */
+      @keyframes dh-focus {
+        0%   { opacity: 0; transform: scale(1.06); }
+        18%  { opacity: 1; transform: scale(1); }
+        70%  { opacity: 1; }
+        100% { opacity: 0; }
+      }
     `;
     // ERTELENDI: ::highlight(dh-bold) { -webkit-text-stroke-width: 0.7px; }
     const el = document.createElement('style');
@@ -590,6 +615,7 @@
 
     paint();
     fillInlineGaps();
+    refreshPanel(index);
     // log(), NOT console.warn(): an orphan is not a failure, it is expected
     // behaviour (the page text changed). Left as a warn it landed in the
     // chrome://extensions Errors list and drowned out real errors. The count is
@@ -927,7 +953,409 @@
     return null;
   }
 
-  // --- 7. startup ---------------------------------------------------------
+  // --- 7. navigator panel ----------------------------------------------------
+  // A docked panel listing the document outline and every highlight, with click to
+  // jump. Shadow DOM for the same reason as the toolbar: the page cannot restyle it
+  // and it cannot restyle the page.
+  //
+  // TOP FRAME ONLY. Inside an iframe the panel would be trapped in the frame's box,
+  // and pages that embed their content would end up with two of them. One navigator
+  // per tab is the only sensible reading.
+
+  const PREFS_KEY = 'dhPanelPrefs';
+  const prefs = { side: 'right', theme: 'auto', open: false };
+
+  let pHost = null;
+  let pShadow = null;
+  let pTab = 'toc'; // 'toc' | 'marks'
+  let tocItems = [];
+
+  const isTopFrame = (() => {
+    try {
+      return window.top === window;
+    } catch {
+      return false;
+    }
+  })();
+
+  async function loadPrefs() {
+    if (!contextAlive()) return;
+    try {
+      const got = await chrome.storage.local.get(PREFS_KEY);
+      Object.assign(prefs, got[PREFS_KEY] ?? {});
+    } catch (e) {
+      if (!isInvalidated(e)) log(`${TAG} panel tercihleri okunamadi`, e);
+    }
+  }
+
+  async function savePrefs() {
+    if (!contextAlive()) return;
+    try {
+      await chrome.storage.local.set({ [PREFS_KEY]: { ...prefs } });
+    } catch (e) {
+      if (!isInvalidated(e)) log(`${TAG} panel tercihleri yazilamadi`, e);
+    }
+  }
+
+  /* --- outline extraction -----------------------------------------------------
+   * Two sources, because a local .md file has NO headings in the DOM.
+   *
+   *   rendered document -> real <h1>..<h6> elements
+   *   raw .md / .txt    -> Chrome renders the file as plain text inside a single
+   *                        <pre>. There are no heading elements at all, so the
+   *                        "# " syntax is read out of the flattened index text.
+   *
+   * The raw case is the one that matters most: reading local Markdown is why this
+   * extension exists, and most people open those files with no viewer installed.
+   * -------------------------------------------------------------------------- */
+
+  /** True when the page is a plain-text document rendered by Chrome itself. */
+  function isRawTextDocument() {
+    const pres = document.body?.querySelectorAll?.('pre');
+    if (!pres || pres.length !== 1) return false;
+    const bodyLen = (document.body.textContent ?? '').trim().length;
+    const preLen = (pres[0].textContent ?? '').trim().length;
+    return bodyLen > 0 && bodyLen === preLen;
+  }
+
+  function collectHeadings(index) {
+    const out = [];
+
+    if (isRawTextDocument()) {
+      // ATX headings only ("# Title"). Setext ("Title" over "===") is deliberately
+      // left out: it is rare in the technical documents this targets, and telling a
+      // heading underline apart from a horizontal rule needs more context than a
+      // flat scan has.
+      const re = /^(#{1,6})[ \t]+(\S.*?)[ \t]*#*[ \t]*$/gm;
+      let m;
+      while ((m = re.exec(index.text))) {
+        const title = m[2].replace(/[*_`]/g, '').trim();
+        if (!title) continue;
+        const start = m.index + m[1].length + 1;
+        out.push({ level: m[1].length, text: title, start, end: start + m[2].length });
+      }
+      return out;
+    }
+
+    for (const el of document.querySelectorAll('h1,h2,h3,h4,h5,h6')) {
+      if (el.closest(`[${UI_ATTR}]`)) continue;
+      const text = (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+      if (!text) continue;
+      out.push({ level: Number(el.tagName[1]), text, el });
+    }
+    return out;
+  }
+
+  /* --- focus frame ------------------------------------------------------------
+   * The frame CANNOT be drawn with ::highlight(): that API accepts paint properties
+   * only and ignores border and outline entirely (measured — see the field notes).
+   * So it is a short-lived absolutely positioned overlay built from
+   * getClientRects(), removed as soon as the animation ends. Nothing is added to the
+   * document permanently and the page structure is never altered.
+   * -------------------------------------------------------------------------- */
+
+  const FOCUS_ATTR = 'data-dh-focus';
+  let frameTimer = null;
+
+  function clearFocusFrames() {
+    document.querySelectorAll(`[${FOCUS_ATTR}]`).forEach((n) => n.remove());
+  }
+
+  function focusFrame(rects) {
+    clearFocusFrames();
+    clearTimeout(frameTimer);
+    if (!rects.length) return;
+
+    const sx = window.scrollX;
+    const sy = window.scrollY;
+    const pad = 4;
+
+    for (const r of rects) {
+      if (!r.width && !r.height) continue;
+      const box = document.createElement('div');
+      box.setAttribute(UI_ATTR, '');
+      box.setAttribute(FOCUS_ATTR, '');
+      box.style.cssText = [
+        'position:absolute',
+        `top:${r.top + sy - pad}px`,
+        `left:${r.left + sx - pad}px`,
+        `width:${r.width + pad * 2}px`,
+        `height:${r.height + pad * 2}px`,
+        'border:2px solid #2563eb',
+        'border-radius:4px',
+        'background:rgba(37,99,235,.12)',
+        'pointer-events:none',
+        'z-index:2147483646',
+        'opacity:0',
+        'animation:dh-focus 1.6s ease-out forwards',
+      ].join(';');
+      document.documentElement.appendChild(box);
+    }
+
+    frameTimer = setTimeout(clearFocusFrames, 1700);
+  }
+
+  function jumpToRange(range) {
+    if (!range) return;
+    const first = range.getBoundingClientRect();
+    window.scrollTo({
+      top: Math.max(0, first.top + window.scrollY - window.innerHeight * 0.3),
+      behavior: 'smooth',
+    });
+    // Client rects are viewport-relative, so they are re-read after the scroll
+    // settles — measuring before it would frame the old position.
+    setTimeout(() => focusFrame([...range.getClientRects()]), 400);
+  }
+
+  function jumpToElement(el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => focusFrame([el.getBoundingClientRect()]), 400);
+  }
+
+  // --- panel construction -----------------------------------------------------
+
+  const PANEL_CSS = `
+    * { box-sizing: border-box; }
+
+    .wrap {
+      position: fixed; top: 0; bottom: 0; z-index: 2147483645;
+      display: flex; align-items: stretch;
+      font: 13px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+      --bg:#fff; --panel:#f4f5f7; --panelHi:#e9ebef;
+      --ink:#1f2937; --muted:#6b7280; --line:#dfe3e8;
+    }
+    .wrap[data-side="right"] { right: 0; flex-direction: row; }
+    .wrap[data-side="left"]  { left: 0;  flex-direction: row-reverse; }
+
+    .wrap[data-theme="dark"] {
+      --bg:#161c24; --panel:#1f2937; --panelHi:#2a3543;
+      --ink:#e8ecf1; --muted:#95a1b0; --line:#2d3947;
+    }
+    @media (prefers-color-scheme: dark) {
+      .wrap[data-theme="auto"] {
+        --bg:#161c24; --panel:#1f2937; --panelHi:#2a3543;
+        --ink:#e8ecf1; --muted:#95a1b0; --line:#2d3947;
+      }
+    }
+
+    /* The handle stays on screen when the panel is closed. Without it there is no
+       way back in: an extension cannot add a button to the browser's own chrome. */
+    .handle {
+      align-self: center; width: 26px; height: 96px; cursor: pointer; padding: 0;
+      border: 1px solid var(--line); background: var(--panel); color: var(--muted);
+      display: grid; place-items: center;
+      writing-mode: vertical-rl; font: inherit; font-size: 11px; letter-spacing: .06em;
+    }
+    .wrap[data-side="right"] .handle { border-radius: 8px 0 0 8px; border-right: 0; }
+    .wrap[data-side="left"]  .handle { border-radius: 0 8px 8px 0; border-left: 0; transform: rotate(180deg); }
+    .handle:hover { color: var(--ink); background: var(--panelHi); }
+
+    .body {
+      width: 300px; display: flex; flex-direction: column;
+      background: var(--bg); color: var(--ink);
+      border-left: 1px solid var(--line); border-right: 1px solid var(--line);
+      box-shadow: 0 0 24px rgba(0,0,0,.14);
+    }
+    .wrap:not([data-open]) .body { display: none; }
+
+    header { display: flex; align-items: center; gap: 6px; padding: 10px 10px 8px; }
+    header .name { font-weight: 650; font-size: 12px; letter-spacing: -.01em; flex: 1;
+                   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .icobtn {
+      width: 24px; height: 24px; border-radius: 6px; cursor: pointer; padding: 0;
+      border: 1px solid var(--line); background: transparent; color: var(--muted);
+      display: grid; place-items: center; font: inherit; font-size: 13px; line-height: 1;
+    }
+    .icobtn:hover { color: var(--ink); background: var(--panelHi); }
+
+    .tabs { display: flex; gap: 4px; padding: 0 10px 8px; }
+    .tab {
+      flex: 1; padding: 5px 8px; border-radius: 6px; cursor: pointer; font: inherit;
+      font-size: 12px; border: 1px solid transparent; background: transparent; color: var(--muted);
+    }
+    .tab[aria-selected="true"] {
+      background: var(--panel); border-color: var(--line); color: var(--ink); font-weight: 600;
+    }
+
+    .list { flex: 1; overflow-y: auto; padding: 2px 6px 12px; }
+    .row {
+      display: flex; gap: 7px; align-items: flex-start; width: 100%;
+      padding: 5px 7px; border: 0; border-radius: 6px; cursor: pointer;
+      background: transparent; color: inherit; text-align: left;
+      font: inherit; line-height: 1.35;
+    }
+    .row:hover { background: var(--panelHi); }
+    .row[disabled] { cursor: default; opacity: .45; }
+    .row[disabled]:hover { background: transparent; }
+    .row .t { flex: 1; overflow-wrap: anywhere; }
+
+    .lvl1 { font-weight: 650; }
+    .lvl2 { padding-left: 14px; }
+    .lvl3 { padding-left: 26px; color: var(--muted); }
+    .lvl4, .lvl5, .lvl6 { padding-left: 38px; color: var(--muted); font-size: 12px; }
+
+    .chip { width: 11px; height: 11px; border-radius: 3px; margin-top: 3px; flex: none;
+            border: 1px solid rgba(0,0,0,.18); }
+    .chip.u { background: repeating-linear-gradient(180deg, transparent 0 7px, #e11d48 7px 9px); }
+
+    .empty { padding: 16px 10px; color: var(--muted); font-size: 12px; }
+  `;
+
+  function buildPanel() {
+    pHost = document.createElement('div');
+    pHost.setAttribute(UI_ATTR, '');
+    pShadow = pHost.attachShadow({ mode: 'closed' });
+    pShadow.innerHTML =
+      `<style>${PANEL_CSS}</style>` +
+      `<div class="wrap">` +
+      `<button class="handle" data-act="toggle"></button>` +
+      `<div class="body">` +
+      `<header>` +
+      `<span class="name">${msg('pnlTitle', 'Doc Highlighter')}</span>` +
+      `<button class="icobtn" data-act="side" title="${msg('pnlSide', 'Move to the other side')}">&#8646;</button>` +
+      `<button class="icobtn" data-act="theme" title="${msg('pnlTheme', 'Light / dark')}">&#9680;</button>` +
+      `<button class="icobtn" data-act="toggle" title="${msg('pnlClose', 'Close')}">&times;</button>` +
+      `</header>` +
+      `<div class="tabs">` +
+      `<button class="tab" data-tab="toc">${msg('pnlContents', 'Contents')}</button>` +
+      `<button class="tab" data-tab="marks">${msg('pnlHighlights', 'Highlights')}</button>` +
+      `</div>` +
+      `<div class="list"></div>` +
+      `</div></div>`;
+
+    document.documentElement.appendChild(pHost);
+    pShadow.addEventListener('click', onPanelClick);
+    syncPanelChrome();
+  }
+
+  /** Side, theme, open state, handle label, tab selection — everything but the lists. */
+  function syncPanelChrome() {
+    if (!pShadow) return;
+    const wrap = pShadow.querySelector('.wrap');
+    wrap.dataset.side = prefs.side;
+    wrap.dataset.theme = prefs.theme;
+    if (prefs.open) wrap.setAttribute('data-open', '');
+    else wrap.removeAttribute('data-open');
+
+    pShadow.querySelector('.handle').textContent = prefs.open
+      ? msg('pnlClose', 'Close')
+      : msg('pnlOpen', 'Contents');
+
+    for (const t of pShadow.querySelectorAll('.tab')) {
+      t.setAttribute('aria-selected', String(t.dataset.tab === pTab));
+    }
+  }
+
+  function renderPanel() {
+    if (!pShadow || !prefs.open) return;
+    const list = pShadow.querySelector('.list');
+    list.textContent = '';
+
+    const rows = pTab === 'toc' ? tocRows() : markRows();
+    if (!rows.length) {
+      const p = document.createElement('div');
+      p.className = 'empty';
+      p.textContent =
+        pTab === 'toc'
+          ? msg('pnlNoHeadings', 'No headings found in this document.')
+          : msg('pnlNoMarks', 'Nothing highlighted on this page yet.');
+      list.appendChild(p);
+      return;
+    }
+    for (const r of rows) list.appendChild(r);
+  }
+
+  function tocRows() {
+    return tocItems.map((h, i) => {
+      const b = document.createElement('button');
+      b.className = `row lvl${h.level}`;
+      b.dataset.toc = String(i);
+      const t = document.createElement('span');
+      t.className = 't';
+      t.textContent = h.text;
+      b.appendChild(t);
+      return b;
+    });
+  }
+
+  function markRows() {
+    // Document order, not creation order: the panel is a map of the page, and a map
+    // that lists things in the order they were made is not a map.
+    const items = state.highlights
+      .map((h) => ({ h, l: live.get(h.id) }))
+      .sort((a, b) => (a.l?.start ?? Infinity) - (b.l?.start ?? Infinity));
+
+    return items.map(({ h, l }) => {
+      const b = document.createElement('button');
+      b.className = 'row';
+      b.dataset.mark = h.id;
+      // An orphan is not deleted, it simply cannot be jumped to on this page.
+      if (!l) {
+        b.disabled = true;
+        b.title = msg('pnlOrphan', 'This text is not on the page right now.');
+      }
+
+      const chip = document.createElement('span');
+      chip.className = h.color ? 'chip' : 'chip u';
+      if (h.color) chip.style.background = PALETTE[h.color] ?? '#ffd54a';
+      b.appendChild(chip);
+
+      const t = document.createElement('span');
+      t.className = 't';
+      const raw = (h.anchor?.exact ?? '').replace(/\s+/g, ' ').trim();
+      t.textContent = raw.length > 90 ? `${raw.slice(0, 90)}…` : raw;
+      b.appendChild(t);
+      return b;
+    });
+  }
+
+  async function onPanelClick(e) {
+    const btn = e.target.closest?.('button');
+    if (!btn) return;
+
+    if (btn.dataset.act === 'toggle') {
+      prefs.open = !prefs.open;
+      syncPanelChrome();
+      renderPanel();
+      return savePrefs();
+    }
+    if (btn.dataset.act === 'side') {
+      prefs.side = prefs.side === 'right' ? 'left' : 'right';
+      syncPanelChrome();
+      return savePrefs();
+    }
+    if (btn.dataset.act === 'theme') {
+      prefs.theme = prefs.theme === 'auto' ? 'light' : prefs.theme === 'light' ? 'dark' : 'auto';
+      syncPanelChrome();
+      return savePrefs();
+    }
+    if (btn.dataset.tab) {
+      pTab = btn.dataset.tab;
+      syncPanelChrome();
+      return renderPanel();
+    }
+    if (btn.dataset.toc !== undefined) {
+      const h = tocItems[Number(btn.dataset.toc)];
+      if (!h) return;
+      if (h.el) return jumpToElement(h.el);
+      // Raw text document: the heading is an offset range, not an element. The index
+      // is rebuilt because the document may have changed since the panel was filled.
+      return jumpToRange(offsetsToRange(buildIndex(), h.start, h.end));
+    }
+    if (btn.dataset.mark) {
+      const l = live.get(btn.dataset.mark);
+      if (l) jumpToRange(l.range);
+    }
+  }
+
+  /** Called after every re-anchor, so both lists keep following the document. */
+  function refreshPanel(index) {
+    if (!isTopFrame || !pShadow) return;
+    tocItems = collectHeadings(index);
+    renderPanel();
+  }
+
+  // --- 8. startup ---------------------------------------------------------
 
   function onMouseUp(e) {
     if (host?.contains(e.target)) return;
@@ -1062,6 +1490,10 @@
 
       ensureStyleSheet();
       buildToolbar();
+      if (isTopFrame) {
+        await loadPrefs();
+        buildPanel();
+      }
 
       await load(index);
       const orphan = applyAll(index);
@@ -1094,6 +1526,8 @@
         removeHighlight,
         clearPage,
         applyAll,
+        collectHeadings,
+        isRawTextDocument,
       };
 
       // Full state on one line: this tells you at which stage a problem occurs.

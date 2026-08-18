@@ -41,6 +41,21 @@ contrast, and the colours are kept apart in brightness so they stay distinguisha
 under colour vision deficiency.
 
 
+FIND YOUR WAY AROUND A LONG DOCUMENT
+
+A panel docks to either edge of the page, and folds away when you do not want it.
+
+One tab is the document outline — every heading, indented by level, click to jump.
+This works on local Markdown files too, where there are no headings for an extension
+to read: the outline is built from the "# " syntax in the text itself.
+
+The other tab lists every highlight on the page, in the order they appear in the
+document. Click one and the page scrolls to it and frames it for a moment, so you never
+lose a mark in a long file again.
+
+The panel remembers which side you put it on, and whether you prefer light or dark.
+
+
 IT DOES NOT BREAK THE PAGE
 
 Highlighting is drawn with the CSS Custom Highlight API rather than by wrapping your

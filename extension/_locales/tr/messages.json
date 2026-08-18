@@ -211,5 +211,35 @@
   },
   "tbClearAllArmedHint": {
     "message": "Onaylamak için tekrar tıkla"
+  },
+  "pnlTitle": {
+    "message": "Doc Highlighter"
+  },
+  "pnlOpen": {
+    "message": "İçindekiler"
+  },
+  "pnlClose": {
+    "message": "Kapat"
+  },
+  "pnlSide": {
+    "message": "Diğer tarafa al"
+  },
+  "pnlTheme": {
+    "message": "Açık / koyu"
+  },
+  "pnlContents": {
+    "message": "İçindekiler"
+  },
+  "pnlHighlights": {
+    "message": "Highlightlar"
+  },
+  "pnlNoHeadings": {
+    "message": "Bu dokümanda başlık bulunamadı."
+  },
+  "pnlNoMarks": {
+    "message": "Bu sayfada henüz highlight yok."
+  },
+  "pnlOrphan": {
+    "message": "Bu metin şu an sayfada değil."
   }
 }

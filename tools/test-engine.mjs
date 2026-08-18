@@ -395,6 +395,100 @@ check('ilgisiz aralik ortusme saymaz', () => {
   });
 }
 
+
+// --- navigator paneli: icindekiler cikarimi ---------------------------------
+// Neden onemli: lokal bir .md dosyasinda DOM'da BASLIK YOKTUR. Chrome dosyayi
+// tek bir <pre> icinde duz metin olarak gosterir. Icindekiler bu yuzden iki
+// ayri kaynaktan cikariliyor ve ikisi de burada dogrulanir.
+
+{
+  const { api } = await boot();
+
+  check('render edilmis dokumanda basliklar DOM dan gelir', () => {
+    const items = api.collectHeadings(api.buildIndex());
+    truthy(items.length >= 1, 'en az bir baslik');
+    eq(items[0].level, 1, 'seviye');
+    eq(items[0].text, 'Baslik', 'metin');
+    truthy(items[0].el, 'element referansi tasiyor');
+  });
+
+  check('render edilmis dokuman ham metin sayilmaz', () => {
+    eq(api.isRawTextDocument(), false, 'isRawTextDocument');
+  });
+}
+
+{
+  // Chrome'un duz metin goruntuleyicisinin urettigi yapi: tek <pre>.
+  const MD = [
+    '# Manifest V3',
+    '',
+    'Giris paragrafi.',
+    '',
+    '## 1. setIcon yolu',
+    '',
+    'Govde metni burada.',
+    '',
+    '### Ayrinti',
+    '',
+    '#hashtag bir baslik DEGILDIR',
+    '',
+    '###### Alti seviye',
+  ].join('\n');
+
+  const { api } = await boot(
+    '<!doctype html><html><body><pre>' + MD + '</pre></body></html>',
+    { url: 'file:///C:/notlar/mv3.md' },
+  );
+
+  check('ham .md dosyasi ham metin olarak taninir', () => {
+    eq(api.isRawTextDocument(), true, 'isRawTextDocument');
+  });
+
+  check('ham .md dosyasinda basliklar # sozdiziminden cikarilir', () => {
+    const items = api.collectHeadings(api.buildIndex());
+    eq(items.map((h) => [h.level, h.text]), [
+      [1, 'Manifest V3'],
+      [2, '1. setIcon yolu'],
+      [3, 'Ayrinti'],
+      [6, 'Alti seviye'],
+    ], 'baslik listesi');
+  });
+
+  check('bosluksuz # bir baslik degildir', () => {
+    const items = api.collectHeadings(api.buildIndex());
+    truthy(!items.some((h) => h.text.includes('hashtag')), '#hashtag alinmadi');
+  });
+
+  check('ham .md basligindaki offset gercek metne denk gelir', () => {
+    const idx = api.buildIndex();
+    const items = api.collectHeadings(idx);
+    for (const h of items) {
+      eq(idx.text.slice(h.start, h.end), h.text, 'offset -> metin (' + h.text + ')');
+    }
+  });
+
+  check('ham .md dosyasinda basliklar element referansi TASIMAZ', () => {
+    // Element yoksa panel offset uzerinden range kurup oraya atlar; bu ayrim
+    // bozulursa tiklama sessizce hicbir sey yapmaz.
+    const items = api.collectHeadings(api.buildIndex());
+    truthy(items.every((h) => !h.el && typeof h.start === 'number'), 'hepsi offset tabanli');
+  });
+}
+
+{
+  // Kendi arayuzumuzdeki basliklar icindekiler listesine SIZMAMALI.
+  const { window, api } = await boot();
+  const ui = window.document.createElement('div');
+  ui.setAttribute('data-dh-ui', '');
+  ui.innerHTML = '<h2>PANEL BASLIGI SIZMAMALI</h2>';
+  window.document.body.appendChild(ui);
+
+  check('kendi arayuzumuzun basliklari icindekilere girmez', () => {
+    const items = api.collectHeadings(api.buildIndex());
+    truthy(!items.some((h) => h.text.includes('SIZMAMALI')), 'UI basligi elendi');
+  });
+}
+
 // --- sonuc ------------------------------------------------------------------
 
 console.log(`\n${pass} gecti, ${failures.length} kaldi\n`);

@@ -211,5 +211,35 @@
   },
   "tbClearAllArmedHint": {
     "message": "Click again to confirm"
+  },
+  "pnlTitle": {
+    "message": "Doc Highlighter"
+  },
+  "pnlOpen": {
+    "message": "Contents"
+  },
+  "pnlClose": {
+    "message": "Close"
+  },
+  "pnlSide": {
+    "message": "Move to the other side"
+  },
+  "pnlTheme": {
+    "message": "Light / dark"
+  },
+  "pnlContents": {
+    "message": "Contents"
+  },
+  "pnlHighlights": {
+    "message": "Highlights"
+  },
+  "pnlNoHeadings": {
+    "message": "No headings found in this document."
+  },
+  "pnlNoMarks": {
+    "message": "Nothing highlighted on this page yet."
+  },
+  "pnlOrphan": {
+    "message": "This text is not on the page right now."
   }
 }

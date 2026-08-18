@@ -28,6 +28,9 @@ saved immediately and restored the next time you open that document.
 **Six colours, plus underline — and they combine.** A passage can be yellow *and*
 underlined.
 
+**A navigator panel** docks to either edge: the document outline on one tab, every
+highlight on the other. Clicking a row scrolls to it and frames it briefly.
+
 ## What makes it different
 
 **Local first. Nothing leaves your device.**
@@ -95,9 +98,42 @@ Chrome blocks every extension there.
 | **×** | Delete the highlight under the cursor |
 | 🧽 | Clear **all** highlights on the page (two-step confirmation) |
 
+The navigator panel opens from the handle docked at the edge of the page.
+
 Colour and underline are independent — pressing one never clears the other. Pressing
 the same thing again removes it; when nothing is left the highlight is deleted.
 `Esc` closes the toolbar.
+
+## The navigator panel
+
+A collapsible panel docked to the left or right edge, with two tabs.
+
+**Contents** is the document outline. It has two sources, because a local `.md` file
+has *no headings in the DOM* — Chrome renders such a file as plain text inside a single
+`<pre>`. So:
+
+| Document | Outline comes from |
+|---|---|
+| HTML, or Markdown rendered by a viewer | real `<h1>`…`<h6>` elements |
+| Raw `.md` / `.txt` opened from disk | `# ` syntax read out of the flattened text |
+
+The raw case is the one that matters most here — reading local Markdown is the reason
+this extension exists, and most people open those files with no viewer installed.
+
+**Highlights** lists every mark in *document order*, not the order they were made — a
+map that lists things in creation order is not a map. Orphans stay in the list, greyed
+out and not clickable, because the text is not on the page right now.
+
+Clicking a row scrolls to the target and draws a frame around it for about a second.
+That frame **cannot** be a `::highlight()` rule: the API ignores `border` and
+`outline` entirely (see [field note 14](docs/mv3-field-notes.md)). It is a short-lived
+absolutely positioned overlay, computed from `getClientRects()` and removed when the
+animation ends — the page structure is still never modified.
+
+Side, theme (auto / light / dark) and open state are remembered in
+`chrome.storage.local`. The panel is built in the **top frame only**: inside an iframe
+it would be trapped in the frame's box, and pages that embed their content would end up
+with two of them.
 
 ## How it works
 
