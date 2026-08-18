@@ -11,7 +11,8 @@
     "check:i18n": "node tools/check-i18n.mjs",
     "test": "node tools/test-engine.mjs",
     "check:colors": "node tools/check-colors.mjs",
-    "prepack": "npm run check:i18n && npm run check:colors && npm test"
+    "prepack": "npm run check:i18n && npm run check:colors && npm test",
+    "privacy": "node tools/build-privacy-md.mjs"
   },
   "devDependencies": {
     "jsdom": "^30.0.1",

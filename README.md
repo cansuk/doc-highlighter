@@ -196,6 +196,10 @@ browser.
 - Safari port — the engine is portable; the permission layer is not
 - Notes/tags on a highlight, export to Markdown or JSON
 
+## Privacy
+
+Nothing is collected and nothing is transmitted — see [PRIVACY.md](PRIVACY.md).
+
 ## License
 
 [GPL-3.0](LICENSE) — see [NOTICE](NOTICE) for third-party attributions
