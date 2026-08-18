@@ -500,55 +500,68 @@ check('ilgisiz aralik ortusme saymaz', () => {
   const layout = () => window.document.getElementById('dh-page-layout');
   const theme = () => window.document.getElementById('dh-page-theme');
 
+  // Her test kendi durumunu BASTAN kurar. Onceki hali durumu iddialardan SONRA
+  // geri aliyordu; bir iddia patlayinca temizlik hic calismiyor ve sonraki testler
+  // kirli durumla kosuyordu.
+  const setup = (o) => {
+    api.prefs.open = o.open ?? true;
+    api.prefs.side = o.side ?? 'right';
+    api.prefs.theme = o.theme ?? 'auto';
+    api.syncPanelChrome();
+  };
+
   check('panel varsayilan olarak ACIK gelir', () => {
     eq(api.prefs.open, true, 'prefs.open');
   });
 
   check('panel acikken sayfayi ORTMEZ, yer acar', () => {
-    // 300 panel + 26 handle. Fixed konumlu panel viewport kenarinda kalir,
-    // html'in margin'i icerigi onun yanina sigdirir.
+    setup({ open: true, side: 'right' });
+    // Sihirli sayi degil ILISKI: rezerve edilen yer panel + handle genisligine
+    // esit olmali. Genislik degistiginde beklenti kendiliginden guncellenir, ama
+    // bozulan sey iliskinin kendisiyse test yine patlar.
+    const beklenen = api.PANEL_W + api.HANDLE_W;
     truthy(layout(), 'yerlesim stili enjekte edildi');
-    truthy(/margin-right:\s*326px/.test(layout().textContent), 'margin-right 326px, gelen: ' + layout().textContent.trim());
+    truthy(
+      new RegExp('margin-right:\\s*' + beklenen + 'px').test(layout().textContent),
+      'margin-right ' + beklenen + 'px bekleniyordu, gelen: ' + layout().textContent.trim(),
+    );
   });
 
   check('panel kapaliyken sadece handle genisligi rezerve edilir', () => {
-    api.prefs.open = false;
-    api.syncPanelChrome();
-    truthy(/margin-right:\s*26px/.test(layout().textContent), 'margin-right 26px, gelen: ' + layout().textContent.trim());
-    api.prefs.open = true;
-    api.syncPanelChrome();
+    setup({ open: false, side: 'right' });
+    truthy(
+      new RegExp('margin-right:\\s*' + api.HANDLE_W + 'px').test(layout().textContent),
+      'margin-right ' + api.HANDLE_W + 'px bekleniyordu, gelen: ' + layout().textContent.trim(),
+    );
   });
 
   check('panel sola alininca margin da sola gecer', () => {
-    api.prefs.side = 'left';
-    api.syncPanelChrome();
+    setup({ open: true, side: 'left' });
     const css = layout().textContent;
-    truthy(/margin-left:\s*326px/.test(css), 'margin-left bekleniyordu, gelen: ' + css.trim());
+    const beklenen = api.PANEL_W + api.HANDLE_W;
+    truthy(
+      new RegExp('margin-left:\\s*' + beklenen + 'px').test(css),
+      'margin-left ' + beklenen + 'px bekleniyordu, gelen: ' + css.trim(),
+    );
     truthy(!/margin-right/.test(css), 'margin-right kalmamali');
-    api.prefs.side = 'right';
-    api.syncPanelChrome();
   });
 
   check('tema auto iken sayfaya DOKUNULMAZ', () => {
-    api.prefs.theme = 'auto';
-    api.syncPanelChrome();
+    setup({ theme: 'auto' });
     eq(theme(), null, 'auto temada sayfa stili olmamali');
   });
 
   check('tema dark iken TUM SAYFA boyanir, sadece panel degil', () => {
-    api.prefs.theme = 'dark';
-    api.syncPanelChrome();
+    setup({ theme: 'dark' });
     const css = theme()?.textContent ?? '';
     truthy(/html,\s*body/.test(css), 'html ve body hedefleniyor');
     truthy(css.includes('#161c24'), 'koyu zemin rengi uygulanmis');
   });
 
   check('tema auto ya donunce sayfa stili KALDIRILIR', () => {
-    api.prefs.theme = 'dark';
-    api.syncPanelChrome();
+    setup({ theme: 'dark' });
     truthy(theme(), 'once var');
-    api.prefs.theme = 'auto';
-    api.syncPanelChrome();
+    setup({ theme: 'auto' });
     eq(theme(), null, 'sonra yok');
   });
 }

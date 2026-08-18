@@ -993,7 +993,7 @@
   // Widths live here, not only in CSS: the page needs the same numbers to reserve
   // room for the panel, and two hand-kept copies would drift apart.
   const PANEL_W = 300;
-  const HANDLE_W = 26;
+  const HANDLE_W = 32;
 
   let pHost = null;
   let pShadow = null;
@@ -1182,16 +1182,49 @@
     }
 
     /* The handle stays on screen when the panel is closed. Without it there is no
-       way back in: an extension cannot add a button to the browser's own chrome. */
+       way back in: an extension cannot add a button to the browser's own chrome.
+       Which is also why it is the loudest thing here — it was drawn in the panel's
+       muted chrome colours before and simply went unseen on a busy page.
+
+       The colour is the brand yellow, the same one the highlighter paints with, on
+       the same #1f2937 ink: 10.4:1, well past WCAG AAA, and it reads as "that
+       highlighting tool" instead of as an anonymous tab. */
     .handle {
-      align-self: center; width: ${HANDLE_W}px; height: 96px; cursor: pointer; padding: 0;
-      border: 1px solid var(--line); background: var(--panel); color: var(--muted);
+      align-self: center; width: ${HANDLE_W}px; height: 118px; cursor: pointer; padding: 0;
+      border: 1px solid rgba(0,0,0,.18);
+      background: linear-gradient(180deg, #ffd54a, #ffc933);
+      color: #1f2937;
       display: grid; place-items: center;
-      writing-mode: vertical-rl; font: inherit; font-size: 11px; letter-spacing: .06em;
+      writing-mode: vertical-rl; font: inherit; font-size: 12px; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase;
+      box-shadow: 0 0 14px rgba(255,201,51,.85), 0 0 34px rgba(255,201,51,.45),
+                  0 4px 14px rgba(0,0,0,.22);
+      /* Three pulses on arrival, then still. A permanent pulse next to text you are
+         trying to read stops being a hint and becomes an irritation. */
+      animation: dh-handle-attention 1.5s ease-out 3;
+    }
+    .handle:hover {
+      background: linear-gradient(180deg, #ffe073, #ffd54a);
+      box-shadow: 0 0 20px rgba(255,201,51,1), 0 0 48px rgba(255,201,51,.6),
+                  0 4px 18px rgba(0,0,0,.26);
+    }
+    .handle:active { transform: scale(.97); }
+    .handle:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+
+    @keyframes dh-handle-attention {
+      0%, 100% { box-shadow: 0 0 14px rgba(255,201,51,.85), 0 0 34px rgba(255,201,51,.45),
+                             0 4px 14px rgba(0,0,0,.22); }
+      50%      { box-shadow: 0 0 26px rgba(255,201,51,1), 0 0 62px rgba(255,201,51,.75),
+                             0 4px 14px rgba(0,0,0,.22); }
+    }
+
+    /* Anyone who has asked the system to calm animations down gets the glow
+       without the pulse. */
+    @media (prefers-reduced-motion: reduce) {
+      .handle { animation: none; }
     }
     .wrap[data-side="right"] .handle { border-radius: 8px 0 0 8px; border-right: 0; }
     .wrap[data-side="left"]  .handle { border-radius: 0 8px 8px 0; border-left: 0; transform: rotate(180deg); }
-    .handle:hover { color: var(--ink); background: var(--panelHi); }
 
     .body {
       width: ${PANEL_W}px; display: flex; flex-direction: column;
@@ -1877,6 +1910,8 @@
         collectHeadings,
         isRawTextDocument,
         prefs,
+        PANEL_W,
+        HANDLE_W,
         openNoteCard,
         closeNoteCard,
         renderNoteDots,
