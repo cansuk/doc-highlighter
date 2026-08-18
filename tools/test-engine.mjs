@@ -437,7 +437,7 @@ check('ilgisiz aralik ortusme saymaz', () => {
 
   const { api } = await boot(
     '<!doctype html><html><body><pre>' + MD + '</pre></body></html>',
-    { url: 'file:///C:/notlar/mv3.md' },
+    { url: 'file:///C:/notlar/mv3.txt' }, // .txt: preview tetiklenmesin, ham yol test ediliyor
   );
 
   check('ham .md dosyasi ham metin olarak taninir', () => {
@@ -672,6 +672,120 @@ check('ilgisiz aralik ortusme saymaz', () => {
 
   check('geometri yokken bile highlightlar cizili kalir', () => {
     eq(api.live.size, 2, 'iki mark hala live');
+  });
+}
+
+
+// --- markdown onizleme ------------------------------------------------------
+// Bu bolum motorun "DOM a dokunma" kuralini BILEREK kirdigi tek yer, o yuzden
+// sonuclari olculuyor: dogru render ediliyor mu, kaynak index e sizmiyor mu,
+// geri donulebiliyor mu, ve dosyadan gelen HTML calisabiliyor mu.
+
+const BT = String.fromCharCode(96); // backtick: String.raw icinde yazilamaz
+const MD_DOC = [
+  '# Manifest V3',
+  '',
+  'Bir paragraf, icinde ' + BT + 'kod' + BT + ' var.',
+  '',
+  '## Ikinci baslik',
+  '',
+  '- birinci madde',
+  '- ikinci madde',
+  '',
+  '| A | B |',
+  '|---|---|',
+  '| 1 | 2 |',
+].join('\n');
+
+{
+  const { window, api } = await boot(
+    '<!doctype html><html><body><pre>' + MD_DOC + '</pre></body></html>',
+    { url: 'file:///C:/notlar/rehber.md' },
+  );
+  const doc = window.document;
+
+  check('.md dosyasi OTOMATIK render edilir', () => {
+    truthy(api.canPreview(), 'canPreview');
+    truthy(doc.querySelector('[data-dh-rendered]'), 'render edilmis govde var');
+    truthy(doc.querySelector('h1'), 'gercek h1 uretildi');
+    truthy(doc.querySelector('table th'), 'tablo uretildi');
+    truthy(doc.querySelector('ul li'), 'liste uretildi');
+  });
+
+  check('render sonrasi HAM kaynak index e SIZMAZ', () => {
+    // display:none yeterli degildi: buildIndex metin dugumlerini gezer, computed
+    // style e bakmaz. Kaynak DOM da kalsaydi dokuman index te IKI KEZ bulunurdu ve
+    // bir anchor kimsenin goremedigi metne tutunabilirdi.
+    const text = api.buildIndex().text;
+    truthy(!text.includes('## Ikinci'), 'markdown sozdizimi index te yok');
+    truthy(!text.includes('|---|'), 'tablo sozdizimi index te yok');
+    eq((text.match(/Manifest V3/g) ?? []).length, 1, 'baslik index te tek kez geciyor');
+  });
+
+  check('render sonrasi icindekiler DOM dan gelir', () => {
+    const items = api.collectHeadings(api.buildIndex());
+    eq(items.map((h) => [h.level, h.text]), [[1, 'Manifest V3'], [2, 'Ikinci baslik']], 'basliklar');
+    truthy(items.every((h) => h.el), 'hepsi element referansi tasiyor');
+  });
+}
+
+{
+  const { window, api } = await boot(
+    '<!doctype html><html><body><pre>' + MD_DOC + '</pre></body></html>',
+    { url: 'file:///C:/notlar/rehber.md' },
+  );
+  const doc = window.document;
+
+  api.setPreview(false);
+
+  check('onizleme kapatilinca HAM kaynak geri gelir', () => {
+    eq(doc.querySelector('[data-dh-rendered]'), null, 'render edilmis govde kaldirildi');
+    truthy(doc.querySelector('pre'), 'ham pre geri geldi');
+    truthy(api.buildIndex().text.includes('## Ikinci'), 'ham sozdizimi index te');
+  });
+
+  api.setPreview(true);
+
+  check('tekrar acilinca yine render edilir', () => {
+    truthy(doc.querySelector('[data-dh-rendered]'), 'render edilmis govde var');
+    truthy(!api.buildIndex().text.includes('## Ikinci'), 'ham sozdizimi index te degil');
+  });
+}
+
+{
+  // Bir .md dosyasi guvenilmez girdidir: repodan, indirmeden, her yerden gelebilir.
+  const { api } = await boot();
+
+  const html = api.renderMarkdown(
+    [
+      '# <script>alert(1)</script>',
+      '',
+      '[kotu](javascript:alert(1))',
+      '',
+      '<img src=x onerror=alert(1)>',
+      '',
+      'in 5 minutes yazisi koda donmemeli',
+    ].join('\n'),
+  );
+
+  check('dosyadan gelen HTML calistirilamaz', () => {
+    // Olcut "onerror= dizgesi yok" DEGIL. Escape edilince metin olarak duruyor ve
+    // olmasi gereken de bu; onemli olan ETIKET KURULAMAMASI. Aci parantezler
+    // kacirildigi surece o metin bir attribute e donusemez.
+    truthy(!/<script/i.test(html), 'script etiketi kurulamadi');
+    truthy(!/<img/i.test(html), 'img etiketi kurulamadi');
+    truthy(html.includes('&lt;script&gt;'), 'kacis gercekten uygulanmis');
+    truthy(html.includes('&lt;img'), 'img de metin olarak kaldi');
+  });
+
+  check('javascript: URL i notrlestirilir', () => {
+    truthy(!/href="javascript:/i.test(html), 'javascript: href kalmadi');
+    truthy(html.includes('href="#"'), 'zararsiz hedefe dusuruldu');
+  });
+
+  check('sayilar yanlislikla kod span i olmaz', () => {
+    // Kod yer tutucusu bosluklarla sinirlansaydi "in 5 minutes" koda donerdi.
+    truthy(!/<code>5<\/code>/.test(html), '5 koda donmedi');
   });
 }
 

@@ -24,7 +24,8 @@
  *   6  toolbar      — mini toolbar that appears over a selection (shadow DOM)
  *   7  navigator    — docked outline + highlight list, click to jump (shadow DOM)
  *   8  notes        — sticky notes attached to a highlight (shadow overlay layer)
- *   9  startup
+ *   9  markdown     — renders a raw .md document; the one deliberate DOM rewrite
+ *  10  startup
  */
 
 (() => {
@@ -988,7 +989,7 @@
   // per tab is the only sensible reading.
 
   const PREFS_KEY = 'dhPanelPrefs';
-  const prefs = { side: 'right', theme: 'auto', open: true };
+  const prefs = { side: 'right', theme: 'auto', open: true, preview: true };
 
   // Widths live here, not only in CSS: the page needs the same numbers to reserve
   // room for the panel, and two hand-kept copies would drift apart.
@@ -1280,6 +1281,13 @@
       overflow-wrap: anywhere;
     }
 
+    .note-chip { background: #2563eb; border-color: transparent; }
+    .note-lead { display: block; }
+    .note-quote {
+      display: block; margin-top: 3px; padding-left: 6px;
+      border-left: 2px solid var(--line); color: var(--muted); font-size: 11px;
+    }
+
     .empty { padding: 16px 10px; color: var(--muted); font-size: 12px; }
   `;
 
@@ -1362,6 +1370,7 @@
       `<div class="body">` +
       `<header>` +
       `<span class="name">${msg('pnlTitle', 'Doc Highlighter')}</span>` +
+      `<button class="icobtn" data-act="preview" title="${msg('pnlPreview', 'Rendered / source')}">&#9776;</button>` +
       `<button class="icobtn" data-act="side" title="${msg('pnlSide', 'Move to the other side')}">&#8646;</button>` +
       `<button class="icobtn" data-act="theme" title="${msg('pnlTheme', 'Light / dark')}">&#9680;</button>` +
       `<button class="icobtn" data-act="toggle" title="${msg('pnlClose', 'Close')}">&times;</button>` +
@@ -1369,6 +1378,7 @@
       `<div class="tabs">` +
       `<button class="tab" data-tab="toc">${msg('pnlContents', 'Contents')}</button>` +
       `<button class="tab" data-tab="marks">${msg('pnlHighlights', 'Highlights')}</button>` +
+      `<button class="tab" data-tab="notes">${msg('pnlNotes', 'Notes')}</button>` +
       `</div>` +
       `<div class="list"></div>` +
       `</div></div>`;
@@ -1402,14 +1412,16 @@
     const list = pShadow.querySelector('.list');
     list.textContent = '';
 
-    const rows = pTab === 'toc' ? tocRows() : markRows();
+    const rows = pTab === 'toc' ? tocRows() : pTab === 'notes' ? noteRows() : markRows();
     if (!rows.length) {
       const p = document.createElement('div');
       p.className = 'empty';
       p.textContent =
         pTab === 'toc'
           ? msg('pnlNoHeadings', 'No headings found in this document.')
-          : msg('pnlNoMarks', 'Nothing highlighted on this page yet.');
+          : pTab === 'notes'
+            ? msg('pnlNoNotes', 'No notes on this page yet.')
+            : msg('pnlNoMarks', 'Nothing highlighted on this page yet.');
       list.appendChild(p);
       return;
     }
@@ -1427,6 +1439,54 @@
       b.appendChild(t);
       return b;
     });
+  }
+
+  /**
+   * Notes get a tab of their own because a note is something you go looking for by
+   * its OWN content — "where did I write about the toggle?" — and hunting for that
+   * inside a list of every mark on the page is the wrong shape for the question.
+   */
+  function noteRows() {
+    return state.highlights
+      .filter((h) => h.note)
+      .map((h) => ({ h, l: live.get(h.id) }))
+      .sort((a, b) => (a.l?.start ?? Infinity) - (b.l?.start ?? Infinity))
+      .map(({ h, l }) => {
+        const b = document.createElement('button');
+        b.className = 'row';
+        b.dataset.mark = h.id;
+        if (!l) {
+          b.disabled = true;
+          b.title = msg('pnlOrphan', 'This text is not on the page right now.');
+        }
+
+        const chip = document.createElement('span');
+        chip.className = h.color ? 'chip' : 'chip note-chip';
+        if (h.color) chip.style.background = PALETTE[h.color] ?? PALETTE.yellow;
+        b.appendChild(chip);
+
+        const t = document.createElement('span');
+        t.className = 't';
+
+        // The note leads and the passage follows in smaller type: in THIS tab the
+        // note is the content and the quote is the context. The Highlights tab has
+        // it the other way round, which is why both tabs earn their place.
+        const lead = document.createElement('span');
+        lead.className = 'note-lead';
+        lead.textContent = h.note.replace(/\s+/g, ' ').trim();
+        t.appendChild(lead);
+
+        const raw = (h.anchor?.exact ?? '').replace(/\s+/g, ' ').trim();
+        if (raw) {
+          const q = document.createElement('span');
+          q.className = 'note-quote';
+          q.textContent = raw.length > 70 ? `${raw.slice(0, 70)}…` : raw;
+          t.appendChild(q);
+        }
+
+        b.appendChild(t);
+        return b;
+      });
   }
 
   function markRows() {
@@ -1481,6 +1541,10 @@
       renderPanel();
       return savePrefs();
     }
+    if (btn.dataset.act === 'preview') {
+      setPreview(!prefs.preview);
+      return;
+    }
     if (btn.dataset.act === 'side') {
       prefs.side = prefs.side === 'right' ? 'left' : 'right';
       syncPanelChrome();
@@ -1507,6 +1571,9 @@
     if (btn.dataset.mark) {
       const l = live.get(btn.dataset.mark);
       if (l) jumpToRange(l.range);
+      // Opened after the scroll settles, so the card is placed against where the
+      // passage ENDS UP rather than where it started.
+      if (pTab === 'notes') setTimeout(() => openNoteCard(btn.dataset.mark), 450);
     }
   }
 
@@ -1736,7 +1803,296 @@
   }
 
 
-  // --- 9. startup ---------------------------------------------------------
+  // --- 9. markdown preview ---------------------------------------------------
+  // Chrome shows a local .md file as plain text in a single <pre>. This renders it.
+  //
+  // THIS IS THE ONE PLACE THE ENGINE DELIBERATELY REWRITES THE DOCUMENT, and it is
+  // worth being explicit about why that is not a contradiction. The "never touch the
+  // DOM" rule exists to stop INCIDENTAL mutation from breaking anchors — wrapping
+  // text in <mark>, colliding with SPA re-renders. Switching view is not incidental:
+  // it is the user asking for a different document, once, on purpose.
+  //
+  // What it costs: anchors are offsets and quotes into the flattened text, and
+  // rendering CHANGES that text — "## Title" becomes "Title", backticks disappear.
+  // A mark that covered markdown syntax will not resolve in the rendered view. It is
+  // NOT lost: orphans are kept, and come back when the view is switched off. That is
+  // the same mechanism that already handles an edited document, reused rather than
+  // rebuilt.
+  //
+  // No third-party renderer: remote code is neither allowed by the CSP nor by what
+  // was declared to the store, and bundling one would double the package for the
+  // long tail of Markdown that technical documents rarely use.
+
+  const MD_URL = /\.(md|markdown|mdown|mkd|mdx)$/i;
+  const RENDER_ATTR = 'data-dh-rendered';
+
+  let rawPre = null; // the original <pre>, kept so the raw view can come back
+
+  /** Preview is only offered where there is something to preview. */
+  function canPreview() {
+    return isTopFrame && MD_URL.test(location.pathname) && (!!rawPre || isRawTextDocument());
+  }
+
+  const escapeHtml = (t) =>
+    t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+  /**
+   * Only these schemes survive. A .md file is untrusted input — it can come from a
+   * repository, a download, anywhere — and "javascript:" in a link would run in the
+   * page the moment it is clicked.
+   */
+  const safeUrl = (u) => {
+    const t = u.trim();
+    return /^(https?:|mailto:|#|\/|\.{0,2}\/)/i.test(t) || !/^[a-z][a-z0-9+.-]*:/i.test(t) ? t : '#';
+  };
+
+  /** Inline spans. HTML is escaped FIRST, so raw markup in the file never renders. */
+  function mdInline(text) {
+    let s = escapeHtml(text);
+
+    // Code spans first: nothing inside them should be interpreted further.
+    const codes = [];
+    s = s.replace(/`([^`]+)`/g, (_, c) => ` ${codes.push(c) - 1} `);
+
+    s = s
+      .replace(/!\[([^\]]*)\]\(([^)\s]+)[^)]*\)/g, (_, a, h) => `<img alt="${a}" src="${safeUrl(h)}">`)
+      .replace(/\[([^\]]+)\]\(([^)\s]+)[^)]*\)/g, (_, t, h) => `<a href="${safeUrl(h)}">${t}</a>`)
+      .replace(/(^|[^\w*])\*\*([^*]+)\*\*/g, '$1<strong>$2</strong>')
+      .replace(/(^|[^\w*])\*([^*\n]+)\*/g, '$1<em>$2</em>')
+      .replace(/(^|[^\w_])__([^_]+)__/g, '$1<strong>$2</strong>')
+      .replace(/~~([^~]+)~~/g, '<del>$1</del>');
+
+    return s.replace(/ (\d+) /g, (_, i) => `<code>${codes[Number(i)]}</code>`);
+  }
+
+  /**
+   * Block parser. Line based on purpose: a full Markdown implementation is a large
+   * dependency and this targets technical documentation — headings, code, lists,
+   * tables, quotes. Anything unrecognised falls through as a paragraph, which is
+   * the failure mode that loses the least.
+   */
+  function renderMarkdown(src) {
+    const lines = src.split('\n');
+    const out = [];
+    let i = 0;
+
+    const isBlank = (l) => !l.trim();
+
+    while (i < lines.length) {
+      const line = lines[i];
+
+      if (isBlank(line)) {
+        i++;
+        continue;
+      }
+
+      // fenced code
+      const fence = line.match(/^\s*(```+|~~~+)\s*(\S*)/);
+      if (fence) {
+        const close = fence[1][0];
+        const lang = fence[2];
+        const body = [];
+        i++;
+        while (i < lines.length && !new RegExp(`^\\s*${close}{3,}\\s*$`).test(lines[i])) {
+          body.push(lines[i]);
+          i++;
+        }
+        i++; // closing fence
+        out.push(
+          `<pre class="dh-code"${lang ? ` data-lang="${escapeHtml(lang)}"` : ''}>` +
+            `<code>${escapeHtml(body.join('\n'))}</code></pre>`,
+        );
+        continue;
+      }
+
+      // heading
+      const h = line.match(/^(#{1,6})[ \t]+(.+?)[ \t]*#*\s*$/);
+      if (h) {
+        const lvl = h[1].length;
+        out.push(`<h${lvl}>${mdInline(h[2])}</h${lvl}>`);
+        i++;
+        continue;
+      }
+
+      // horizontal rule
+      if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(line)) {
+        out.push('<hr>');
+        i++;
+        continue;
+      }
+
+      // table: a header row followed by a separator row
+      if (line.includes('|') && /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(lines[i + 1] ?? '')) {
+        const cells = (l) =>
+          l.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|').map((c) => c.trim());
+        const head = cells(line);
+        i += 2;
+        const rows = [];
+        while (i < lines.length && lines[i].includes('|') && !isBlank(lines[i])) {
+          rows.push(cells(lines[i]));
+          i++;
+        }
+        out.push(
+          '<table><thead><tr>' +
+            head.map((c) => `<th>${mdInline(c)}</th>`).join('') +
+            '</tr></thead><tbody>' +
+            rows
+              .map((r) => `<tr>${r.map((c) => `<td>${mdInline(c)}</td>`).join('')}</tr>`)
+              .join('') +
+            '</tbody></table>',
+        );
+        continue;
+      }
+
+      // blockquote
+      if (/^\s*>/.test(line)) {
+        const body = [];
+        while (i < lines.length && /^\s*>/.test(lines[i])) {
+          body.push(lines[i].replace(/^\s*>\s?/, ''));
+          i++;
+        }
+        out.push(`<blockquote>${renderMarkdown(body.join('\n'))}</blockquote>`);
+        continue;
+      }
+
+      // list — one level of nesting, which is as far as technical docs usually go
+      const li = line.match(/^(\s*)([-*+]|\d+[.)])\s+(.*)$/);
+      if (li) {
+        const ordered = /\d/.test(li[2]);
+        const items = [];
+        while (i < lines.length) {
+          const m = lines[i].match(/^(\s*)([-*+]|\d+[.)])\s+(.*)$/);
+          if (!m) {
+            // a continuation line belongs to the item above it
+            if (!isBlank(lines[i]) && items.length && /^\s{2,}/.test(lines[i])) {
+              items[items.length - 1] += ` ${lines[i].trim()}`;
+              i++;
+              continue;
+            }
+            break;
+          }
+          const indented = m[1].length >= 2;
+          if (indented && items.length) {
+            items[items.length - 1] += `${m[3]}`; // nested, joined below
+          } else {
+            items.push(m[3]);
+          }
+          i++;
+        }
+        const render = (t) => {
+          const [own, ...kids] = t.split('');
+          const nested = kids.length
+            ? `<ul>${kids.map((k) => `<li>${mdInline(k)}</li>`).join('')}</ul>`
+            : '';
+          return `<li>${mdInline(own)}${nested}</li>`;
+        };
+        out.push(
+          ordered
+            ? `<ol>${items.map(render).join('')}</ol>`
+            : `<ul>${items.map(render).join('')}</ul>`,
+        );
+        continue;
+      }
+
+      // paragraph
+      const para = [];
+      while (i < lines.length && !isBlank(lines[i]) && !/^\s*(#{1,6}\s|>|```|~~~)/.test(lines[i])) {
+        para.push(lines[i]);
+        i++;
+      }
+      if (para.length) out.push(`<p>${mdInline(para.join('\n'))}</p>`);
+      else i++;
+    }
+
+    return out.join('\n');
+  }
+
+  const PREVIEW_CSS = `
+    [${RENDER_ATTR}] {
+      max-width: 46rem; margin: 0 auto; padding: 2.5rem 1.5rem 5rem;
+      font: 16px/1.7 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow-wrap: break-word;
+    }
+    [${RENDER_ATTR}] h1 { font-size: 2rem; line-height: 1.25; margin: 2rem 0 .75rem; }
+    [${RENDER_ATTR}] h2 { font-size: 1.5rem; line-height: 1.3; margin: 2rem 0 .6rem;
+                          padding-bottom: .3rem; border-bottom: 1px solid rgba(128,128,128,.28); }
+    [${RENDER_ATTR}] h3 { font-size: 1.2rem; margin: 1.6rem 0 .5rem; }
+    [${RENDER_ATTR}] h4, [${RENDER_ATTR}] h5, [${RENDER_ATTR}] h6 { font-size: 1rem; margin: 1.3rem 0 .4rem; }
+    [${RENDER_ATTR}] p { margin: 0 0 1rem; }
+    [${RENDER_ATTR}] ul, [${RENDER_ATTR}] ol { margin: 0 0 1rem; padding-left: 1.5rem; }
+    [${RENDER_ATTR}] li { margin: .3rem 0; }
+    [${RENDER_ATTR}] blockquote {
+      margin: 0 0 1rem; padding: .1rem 1rem; border-left: 3px solid rgba(128,128,128,.45);
+      opacity: .88;
+    }
+    [${RENDER_ATTR}] code {
+      font: .88em/1.5 ui-monospace, Consolas, monospace;
+      background: rgba(128,128,128,.16); border-radius: 4px; padding: .12em .38em;
+    }
+    [${RENDER_ATTR}] pre.dh-code {
+      background: rgba(128,128,128,.14); border-radius: 8px; padding: .9rem 1rem;
+      overflow-x: auto; margin: 0 0 1rem;
+    }
+    [${RENDER_ATTR}] pre.dh-code code { background: none; padding: 0; font-size: .86em; }
+    [${RENDER_ATTR}] table { border-collapse: collapse; width: 100%; margin: 0 0 1rem; font-size: .95em; }
+    [${RENDER_ATTR}] th, [${RENDER_ATTR}] td {
+      border: 1px solid rgba(128,128,128,.35); padding: .45rem .6rem; text-align: left; vertical-align: top;
+    }
+    [${RENDER_ATTR}] th { background: rgba(128,128,128,.12); }
+    [${RENDER_ATTR}] hr { border: 0; border-top: 1px solid rgba(128,128,128,.35); margin: 2rem 0; }
+    [${RENDER_ATTR}] img { max-width: 100%; height: auto; }
+    [${RENDER_ATTR}] a { color: #2563eb; }
+  `;
+
+  /**
+   * Switches between raw and rendered. Re-anchoring afterwards is what makes marks
+   * survive the switch: applyAll rebuilds the index against the NEW text and finds
+   * each passage again by its quote.
+   */
+  function applyPreviewDom(on) {
+    if (!isTopFrame) return;
+
+    if (on) {
+      const pre = rawPre ?? document.body?.querySelector('pre');
+      if (!pre) return;
+      rawPre = pre;
+      if (document.querySelector(`[${RENDER_ATTR}]`)) return;
+
+      pageStyle('dh-preview-style', PREVIEW_CSS);
+      const host = document.createElement('div');
+      host.setAttribute(RENDER_ATTR, '');
+      // Deliberately NOT marked as our UI: this IS the document now, and it must be
+      // indexed so highlighting works on the rendered text.
+      host.innerHTML = renderMarkdown(pre.textContent ?? '');
+      // replaceWith, NOT display:none. buildIndex walks text nodes and does not
+      // consult computed style, so a hidden source would still put every character
+      // of the document into the index a second time, and an anchor could land on
+      // text nobody can see. The node is kept detached, which is also what makes
+      // going back a single call.
+      pre.replaceWith(host);
+    } else {
+      const host = document.querySelector(`[${RENDER_ATTR}]`);
+      if (host && rawPre) host.replaceWith(rawPre);
+      else host?.remove();
+      pageStyle('dh-preview-style', null);
+    }
+
+  }
+
+  /**
+   * Split from applyPreviewDom so startup can render BEFORE the first anchoring
+   * pass. Rendering after it would resolve every mark against the raw text and
+   * then immediately throw that work away.
+   */
+  function setPreview(on) {
+    applyPreviewDom(on);
+    prefs.preview = on;
+    savePrefs();
+    syncPanelChrome();
+    applyAll(buildIndex()); // re-anchor against the view that is now on screen
+  }
+
+  // --- 10. startup ---------------------------------------------------------
 
   function onMouseUp(e) {
     if (host?.contains(e.target)) return;
@@ -1859,6 +2215,14 @@
       }
       log(`${TAG} yuklendi:`, location.href, `(${document.contentType})`);
 
+      // Preferences decide whether to render, and rendering must happen BEFORE the
+      // first index is built: anchoring against the raw text and then re-rendering
+      // resolves every mark twice and flashes unrendered source in between.
+      if (isTopFrame) {
+        await loadPrefs();
+        if (prefs.preview && MD_URL.test(location.pathname)) applyPreviewDom(true);
+      }
+
       const index = buildIndex();
 
       // Build nothing in empty or tiny frames — with allFrames:true the script also
@@ -1872,10 +2236,7 @@
       ensureStyleSheet();
       buildToolbar();
       buildNoteLayer();
-      if (isTopFrame) {
-        await loadPrefs();
-        buildPanel();
-      }
+      if (isTopFrame) buildPanel();
 
       await load(index);
       const orphan = applyAll(index);
@@ -1920,6 +2281,10 @@
         openNoteCard,
         closeNoteCard,
         renderNoteDots,
+        renderMarkdown,
+        mdInline,
+        canPreview,
+        setPreview,
         applyPageChrome,
         syncPanelChrome,
       };

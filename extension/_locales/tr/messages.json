@@ -256,5 +256,14 @@
   },
   "noteDelete": {
     "message": "Sil"
+  },
+  "pnlNotes": {
+    "message": "Notlar"
+  },
+  "pnlNoNotes": {
+    "message": "Bu sayfada henüz not yok."
+  },
+  "pnlPreview": {
+    "message": "Render / kaynak"
   }
 }

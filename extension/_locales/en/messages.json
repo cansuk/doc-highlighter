@@ -256,5 +256,14 @@
   },
   "noteDelete": {
     "message": "Delete"
+  },
+  "pnlNotes": {
+    "message": "Notes"
+  },
+  "pnlNoNotes": {
+    "message": "No notes on this page yet."
+  },
+  "pnlPreview": {
+    "message": "Rendered / source"
   }
 }
