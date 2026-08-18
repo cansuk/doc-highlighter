@@ -281,9 +281,6 @@
   "qmTranslate": {
     "message": "Translate"
   },
-  "qmSoon": {
-    "message": "Soon"
-  },
   "qmTranslateDesc": {
     "message": "Translate a highlighted passage into your target language, on the device."
   },
@@ -325,5 +322,47 @@
   },
   "cmPreview": {
     "message": "Rendered / source"
+  },
+  "tbTranslate": {
+    "message": "Translate"
+  },
+  "tbTargetLang": {
+    "message": "Target language"
+  },
+  "trWorking": {
+    "message": "Translating…"
+  },
+  "trDownloading": {
+    "message": "Downloading language model…"
+  },
+  "trAlready": {
+    "message": "Already in the target language."
+  },
+  "trKeep": {
+    "message": "Keep as note"
+  },
+  "trUnavailable": {
+    "message": "Translation is not available in this browser."
+  },
+  "trNoPair": {
+    "message": "This language pair is not available on the device."
+  },
+  "trFailed": {
+    "message": "Translation failed."
+  },
+  "trNeedsChrome": {
+    "message": "Needs Chrome 138 or newer on desktop. Chrome runs the model itself; it is not available here."
+  },
+  "trModelNote": {
+    "message": "Runs on your device. The first use of a language pair downloads a model — that download is Chrome's, and no page text is sent anywhere."
+  },
+  "qmTargetLang": {
+    "message": "Translate into"
+  },
+  "qmReady": {
+    "message": "Ready"
+  },
+  "qmUnavailable": {
+    "message": "Unavailable"
   }
 }

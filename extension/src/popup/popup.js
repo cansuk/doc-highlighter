@@ -271,3 +271,69 @@ document.getElementById('lnk-guide').addEventListener('click', (e) => {
   e.preventDefault();
   openOnboarding();
 });
+
+/* --- translate --------------------------------------------------------------
+ * Chrome's built-in Translator runs the model on the device. That is the whole
+ * reason the feature is here: sending a passage to a translation service would
+ * break the promise the rest of the extension is built on.
+ *
+ * Only the target language is configured. There is no on/off switch, because the
+ * button on the selection toolbar IS the switch — nothing translates until it is
+ * pressed, so a second toggle would be a setting that does nothing.
+ * ------------------------------------------------------------------------- */
+
+const TR_KEY = 'dhTranslate';
+
+// Codes only. Names come from Intl.DisplayNames, in the reader's own language, so
+// no list of language names is kept or translated anywhere in this project.
+const TARGETS = [
+  'en', 'tr', 'es', 'fr', 'de', 'it', 'pt', 'nl', 'pl', 'sv', 'da', 'fi', 'cs',
+  'el', 'ro', 'hu', 'uk', 'ru', 'ar', 'he', 'fa', 'hi', 'bn', 'ja', 'ko', 'zh',
+  'th', 'vi', 'id', 'ms',
+];
+
+const trPrefs = { target: 'en', ...((await chrome.storage.local.get(TR_KEY))[TR_KEY] ?? {}) };
+
+const badge = document.getElementById('tr-badge');
+const field = document.getElementById('tr-field');
+const select = document.getElementById('tr-target');
+const trNote = document.getElementById('tr-note');
+
+// The API lives on the page, not on chrome.*: a feature check, not a version check.
+const translatorHere = typeof self.Translator?.create === 'function';
+
+if (!translatorHere) {
+  badge.textContent = t('qmUnavailable');
+  trNote.textContent = t('trNeedsChrome');
+} else {
+  badge.textContent = t('qmReady');
+  badge.classList.add('ok');
+  field.hidden = false;
+  trNote.textContent = t('trModelNote');
+
+  let names;
+  try {
+    names = new Intl.DisplayNames([chrome.i18n.getUILanguage()], { type: 'language' });
+  } catch {
+    names = null;
+  }
+
+  const options = TARGETS.map((code) => ({ code, label: names?.of(code) ?? code })).sort((a, b) =>
+    a.label.localeCompare(b.label),
+  );
+
+  for (const { code, label } of options) {
+    const o = document.createElement('option');
+    o.value = code;
+    o.textContent = label;
+    if (code === trPrefs.target) o.selected = true;
+    select.appendChild(o);
+  }
+
+  select.addEventListener('change', async () => {
+    trPrefs.target = select.value;
+    // The content script listens for this and relabels the toolbar button, so the
+    // change is visible on the page without a reload.
+    await chrome.storage.local.set({ [TR_KEY]: { ...trPrefs } });
+  });
+}

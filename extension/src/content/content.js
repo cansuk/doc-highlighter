@@ -25,7 +25,8 @@
  *   7  navigator    — docked outline + highlight list, click to jump (shadow DOM)
  *   8  notes        — sticky notes attached to a highlight (shadow overlay layer)
  *   9  markdown     — renders a raw .md document; the one deliberate DOM rewrite
- *  10  startup
+ *  10  translate    — Chrome's on-device Translator; nothing is sent anywhere
+  *  11  startup
  */
 
 (() => {
@@ -664,6 +665,12 @@
     '<path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0' +
     'l5.999 6a2 2 0 0 1 0 2.828L12.834 21"/><path d="m5.082 11.09 8.828 8.828"/></svg>';
 
+  // Lucide "languages" — ISC, (c) Lucide Icons and Contributors (see NOTICE).
+  const GLOBE_ICON =
+    '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" ' +
+    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/>' +
+    '<path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>';
   // Lucide "message-square" — ISC, (c) Lucide Icons and Contributors (see NOTICE).
   const NOTE_ICON =
     '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" ' +
@@ -697,6 +704,20 @@
         .u  { color:#fff; font-size:13px; text-decoration:underline 2px #e11d48; }
         .b  { color:#fff; font-size:13px; font-weight:800; }
         .rm { color:#fff; font-size:15px; line-height:1; }
+        .tr { width:auto; padding:0 6px; gap:4px; color:#fff; display:flex; align-items:center; }
+        .tr svg { display:block; }
+        .tr .code { font-size:9px; font-weight:700; letter-spacing:.04em; }
+        .lg { width:16px; color:#fff; font-size:10px; }
+        /* The target list opens inside the toolbar rather than over the page: the toolbar
+           is already positioned against the selection, so the list needs no geometry. */
+        .langs { position:absolute; top:100%; right:0; margin-top:4px; z-index:1;
+                 max-height:190px; overflow-y:auto; display:flex; flex-direction:column;
+                 background:rgba(18,20,24,.96); border:1px solid rgba(255,255,255,.16);
+                 border-radius:9px; padding:4px; min-width:132px; }
+        .langs button { width:100%; height:auto; padding:5px 8px; border:0; border-radius:6px;
+                        color:#fff; font-size:12px; text-align:left; background:transparent; }
+        .langs button:hover { background:rgba(255,255,255,.14); outline:none; }
+        .langs button.on { background:rgba(255,255,255,.2); font-weight:700; }
         .nt { color:#fff; }
         .nt svg { display:block; }
         .clr{ color:#fff; }
@@ -723,6 +744,8 @@
         <button data-act="bold" class="b" title="${msg('tbBold', 'Bold')}">B</button> -->
         <span class="sep"></span>
         <button data-act="note" class="nt" title="${msg('tbNote', 'Note')}">${NOTE_ICON}</button>
+        <button data-act="translate" class="tr" title="${msg('tbTranslate', 'Translate')}">${GLOBE_ICON}<span class="code"></span></button>
+        <button data-act="lang" class="lg" title="${msg('tbTargetLang', 'Target language')}">▾</button>
         <span class="sep"></span>
         <button data-act="clear-all" class="clr" title="${msg('tbClearAll', 'Clear all highlights on this page')}">${ERASER}</button>
         <button data-act="remove" class="rm" title="${msg('tbRemove', 'Remove')}">×</button>
@@ -791,6 +814,7 @@
   }
 
   function hideToolbar() {
+  shadow?.querySelector('.langs')?.remove();
     if (host) host.style.display = 'none';
     pendingRange = null;
     hoveredId = null;
@@ -848,6 +872,21 @@
     // Pressing any other button cancels a pending clear-all.
     disarmClear();
 
+    if (btn.dataset.act === 'translate') {
+      await translateSelection();
+      hideToolbar();
+      return;
+    }
+
+    if (btn.dataset.act === 'lang') {
+      toggleLangMenu();
+      return; // the toolbar STAYS OPEN — a list you cannot read is no list
+    }
+
+    if (btn.dataset.lang) {
+      await setTargetLang(btn.dataset.lang);
+      return;
+    }
     if (btn.dataset.act === 'note') {
       await addNoteFromToolbar();
       hideToolbar();
@@ -1709,6 +1748,8 @@
       color: var(--muted); font-size: 11px; margin: 0 0 6px; line-height: 1.4;
       max-height: 32px; overflow: hidden; border-left: 2px solid var(--line); padding-left: 6px;
     }
+    .tr-out { font-size: 13px; line-height: 1.5; max-height: 190px; overflow-y: auto;
+              border-left: 2px solid #2563eb; padding-left: 8px; }
     .actions { display: flex; gap: 6px; margin-top: 7px; }
     .actions button {
       border-radius: 6px; cursor: pointer; font: inherit; font-size: 12px;
@@ -2168,7 +2209,243 @@
     applyAll(buildIndex()); // re-anchor against the view that is now on screen
   }
 
-  // --- 10. startup ---------------------------------------------------------
+  // --- 10. translate ---------------------------------------------------------
+  // Chrome's built-in Translator runs the model ON THE DEVICE. That is the only
+  // reason this feature exists at all: sending a passage to a translation service
+  // would break the one promise this extension is built on, and would contradict
+  // both the privacy policy and what was declared to the store.
+  //
+  // One thing to be precise about, because it is easy to overstate: Chrome
+  // downloads a language model the first time a pair is used. That download is
+  // Chrome's, and it carries no page text — but it IS a network fetch, so the
+  // privacy policy says so plainly rather than claiming nothing ever happens.
+  //
+  // Requires Chrome 138+ on desktop. Everywhere else the feature reports itself as
+  // unavailable instead of failing when pressed.
+
+  const TR_KEY = 'dhTranslate';
+  const trPrefs = { enabled: false, target: 'en' };
+
+  // Codes only — the NAMES come from Intl.DisplayNames, so no list of language
+  // names is kept (or translated, or allowed to drift) anywhere in this project.
+  const QUICK_LANGS = ['en', 'tr', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'zh', 'ar'];
+
+  const hasTranslator = () => typeof self.Translator?.create === 'function';
+
+  let langNames = null;
+  function langName(code) {
+    try {
+      langNames ??= new Intl.DisplayNames([chrome.i18n.getUILanguage?.() || 'en'], {
+        type: 'language',
+      });
+      return langNames.of(code) ?? code;
+    } catch {
+      return code;
+    }
+  }
+
+  async function loadTrPrefs() {
+    if (!contextAlive()) return;
+    try {
+      const got = await chrome.storage.local.get(TR_KEY);
+      Object.assign(trPrefs, got[TR_KEY] ?? {});
+    } catch (e) {
+      if (!isInvalidated(e)) log(`${TAG} ceviri tercihleri okunamadi`, e);
+    }
+  }
+
+  async function saveTrPrefs() {
+    if (!contextAlive()) return;
+    try {
+      await chrome.storage.local.set({ [TR_KEY]: { ...trPrefs } });
+    } catch (e) {
+      if (!isInvalidated(e)) log(`${TAG} ceviri tercihleri yazilamadi`, e);
+    }
+  }
+
+  /** Best-effort source detection; the API needs a source and guessing wrong is
+   *  worse than asking Chrome. Falls back to the document language. */
+  async function detectLang(text) {
+    try {
+      if (typeof self.LanguageDetector?.create === 'function') {
+        const d = await LanguageDetector.create();
+        const [top] = await d.detect(text);
+        d.destroy?.();
+        if (top?.detectedLanguage) return top.detectedLanguage;
+      }
+    } catch (e) {
+      log(`${TAG} dil tespiti basarisiz`, e);
+    }
+    return (document.documentElement.lang || navigator.language || 'en').split('-')[0];
+  }
+
+  /**
+   * The single call the rest of the file makes. Everything about WHERE the model
+   * runs is behind it, so if the content script ever turns out to be the wrong
+   * place for it, only this function moves.
+   */
+  async function translatePassage(text, onProgress) {
+    if (!hasTranslator()) throw new Error('NO_API');
+
+    const target = trPrefs.target;
+    const source = await detectLang(text);
+    if (source === target) return { source, target, text, same: true };
+
+    const state = await Translator.availability({ sourceLanguage: source, targetLanguage: target });
+    if (state === 'unavailable') throw new Error('PAIR_UNAVAILABLE');
+
+    const translator = await Translator.create({
+      sourceLanguage: source,
+      targetLanguage: target,
+      monitor(m) {
+        m.addEventListener('downloadprogress', (e) => onProgress?.(e.loaded));
+      },
+    });
+
+    try {
+      return { source, target, text: await translator.translate(text), same: false };
+    } finally {
+      translator.destroy?.();
+    }
+  }
+
+  /* --- result card ------------------------------------------------------------
+   * Lives in the note layer, which already knows how to position a card against a
+   * range. The translation is offered as a note rather than kept in a panel of its
+   * own: a translation you want to keep IS a note about that passage.
+   * -------------------------------------------------------------------------- */
+
+  function openTranslateCard(range, body) {
+    if (!nShadow) return;
+    nShadow.querySelector('.card')?.remove();
+    noteOpenId = null;
+    notePendingRange = range;
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.theme = prefs.theme === 'dark' ? 'dark' : 'light';
+    card.dataset.role = 'translate';
+    card.append(body);
+
+    const rects = rectsOf(range);
+    const last = rects[rects.length - 1];
+    const left = last ? last.right + window.scrollX - 120 : window.scrollX + 40;
+    const top = last ? last.bottom + window.scrollY + 10 : window.scrollY + 60;
+    card.style.left = `${Math.max(8, Math.min(left, window.scrollX + window.innerWidth - 288))}px`;
+    card.style.top = `${top}px`;
+
+    nShadow.appendChild(card);
+  }
+
+  const trCardBody = (parts) => {
+    const frag = document.createDocumentFragment();
+    for (const p of parts) frag.appendChild(p);
+    return frag;
+  };
+
+  const trLine = (cls, text) => {
+    const el = document.createElement('p');
+    el.className = cls;
+    el.textContent = text;
+    return el;
+  };
+
+  async function translateSelection() {
+    const range = pendingRange ?? (hoveredId ? live.get(hoveredId)?.range : null);
+    if (!range) return;
+    const text = range.toString().trim();
+    if (!text) return;
+
+    const kept = range.cloneRange();
+
+    if (!hasTranslator()) {
+      return openTranslateCard(
+        kept,
+        trCardBody([trLine('quote', msg('trUnavailable', 'Translation is not available in this browser.'))]),
+      );
+    }
+
+    // Shown immediately: the first use of a language pair downloads a model, and
+    // several silent seconds read as a broken button.
+    const status = trLine('quote', msg('trWorking', 'Translating…'));
+    openTranslateCard(kept, trCardBody([status]));
+
+    try {
+      const out = await translatePassage(text, (loaded) => {
+        status.textContent = `${msg('trDownloading', 'Downloading language model…')} ${Math.round(loaded * 100)}%`;
+      });
+
+      const head = trLine(
+        'quote',
+        out.same
+          ? msg('trAlready', 'Already in the target language.')
+          : `${langName(out.source)} → ${langName(out.target)}`,
+      );
+
+      const body = document.createElement('div');
+      body.className = 'tr-out';
+      body.textContent = out.text;
+
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+      actions.innerHTML =
+        `<button class="primary" data-note-act="save">${msg('trKeep', 'Keep as note')}</button>` +
+        `<button data-note-act="cancel">${msg('noteCancel', 'Cancel')}</button>`;
+
+      // The translation IS the note text if it is kept, so it goes into a textarea
+      // the save handler already knows how to read.
+      const ta = document.createElement('textarea');
+      ta.value = out.text;
+      ta.hidden = true;
+
+      openTranslateCard(kept, trCardBody([head, body, ta, actions]));
+    } catch (e) {
+      const why =
+        e?.message === 'PAIR_UNAVAILABLE'
+          ? msg('trNoPair', 'This language pair is not available on the device.')
+          : msg('trFailed', 'Translation failed.');
+      log(`${TAG} ceviri basarisiz`, e);
+      openTranslateCard(kept, trCardBody([trLine('quote', why)]));
+    }
+  }
+
+  /* --- target language menu ---------------------------------------------------
+   * On the toolbar, next to the passage, because that is where the decision gets
+   * made. The full list stays in the popup; this is the short one.
+   * -------------------------------------------------------------------------- */
+
+  function toggleLangMenu() {
+    if (!shadow) return;
+    const existing = shadow.querySelector('.langs');
+    if (existing) return existing.remove();
+
+    const box = document.createElement('div');
+    box.className = 'langs';
+    const codes = [...new Set([trPrefs.target, ...QUICK_LANGS])];
+    for (const code of codes) {
+      const b = document.createElement('button');
+      b.dataset.lang = code;
+      b.textContent = langName(code);
+      if (code === trPrefs.target) b.className = 'on';
+      box.appendChild(b);
+    }
+    shadow.querySelector('.bar')?.appendChild(box);
+  }
+
+  async function setTargetLang(code) {
+    trPrefs.target = code;
+    trPrefs.enabled = true;
+    await saveTrPrefs();
+    shadow?.querySelector('.langs')?.remove();
+    refreshLangButton();
+  }
+
+  function refreshLangButton() {
+    const b = shadow?.querySelector('[data-act="translate"] .code');
+    if (b) b.textContent = trPrefs.target.toUpperCase();
+  }
+
+  // --- 11. startup ---------------------------------------------------------
 
   /**
    * One entry point for everything the context menu can ask for, so the menu never
@@ -2366,6 +2643,8 @@
       ensureStyleSheet();
       buildToolbar();
       buildNoteLayer();
+      await loadTrPrefs();
+      refreshLangButton();
       if (isTopFrame) buildPanel();
 
       await load(index);
@@ -2400,9 +2679,15 @@
       // The popup writes the palette; the page repaints without a reload. Storage
       // events are the only channel that reaches an already-injected script.
       chrome.storage.onChanged.addListener((changes, area) => {
-        if (area !== 'local' || !changes[PALETTE_KEY]) return;
-        custom = changes[PALETTE_KEY].newValue ?? {};
-        refreshPalette();
+        if (area !== 'local') return;
+        if (changes[PALETTE_KEY]) {
+          custom = changes[PALETTE_KEY].newValue ?? {};
+          refreshPalette();
+        }
+        if (changes[TR_KEY]) {
+          Object.assign(trPrefs, changes[TR_KEY].newValue ?? {});
+          refreshLangButton();
+        }
       });
 
       // Diagnostics + test surface. The anchoring functions are exposed as well:
@@ -2437,6 +2722,10 @@
         PALETTE,
         paletteCss,
         stamp,
+        trPrefs,
+        hasTranslator,
+        langName,
+        QUICK_LANGS,
         runCommand,
         renderMarkdown,
         mdInline,

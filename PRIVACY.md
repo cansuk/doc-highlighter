@@ -2,9 +2,9 @@
 
 # Privacy Policy
 
-Last updated: 18 August 2026
+Last updated: 19 August 2026
 
-**Doc Highlighter collects nothing, transmits nothing, and contacts no server.** There is no account, no sign-in, no analytics and no third party. The extension contains no code that makes a network request.
+**Doc Highlighter collects nothing and transmits nothing.** There is no account, no sign-in, no analytics and no third party. Nothing you read, select or write is sent anywhere.
 
 Everything you mark stays on the computer you marked it on.
 
@@ -31,6 +31,14 @@ In `chrome.storage.local`, an area that belongs to the extension on your own mac
 - **Not in the page's own storage.** If they lived there, the website could read them and could erase them.
 
 It is *local* storage, not Chrome's sync storage, so your marks are not copied to your Google account and do not travel to your other devices.
+
+## Translation, and the one thing that is downloaded
+
+Translation is optional and runs **on your device**, using the translator built into Chrome. The passage you translate is not sent to a translation service, to us, or to anyone else.
+
+Being precise rather than flattering: the first time you use a language pair, **Chrome downloads a language model**. That download is made by Chrome, not by this extension, and it carries no page text — it fetches the model, nothing about what you are reading. After it, translation works with no network at all.
+
+If you never press the translate button, no model is ever downloaded.
 
 ## What is never collected
 

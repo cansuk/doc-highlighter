@@ -117,6 +117,15 @@
   .card { border: 1px solid var(--rule); border-radius: 10px; padding: 11px 12px; background: var(--panel); }
   .card h3 { margin: 0 0 3px; font-size: 13px; display: flex; align-items: center; gap: 7px; }
   .card p { margin: 0; font-size: 12px; color: var(--muted); }
+  .field { display: flex; align-items: center; gap: 8px; margin-top: 11px; font-size: 12.5px; }
+  .field select {
+    flex: 1; font: inherit; font-size: 12.5px; padding: 5px 7px;
+    border: 1px solid var(--rule); border-radius: 7px;
+    background: var(--paper); color: var(--ink);
+  }
+  .fine { margin-top: 10px !important; font-size: 11.5px; line-height: 1.45; }
+  .soon.ok { color: var(--ok); border-color: currentColor; }
+
   .soon {
     font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
     color: var(--muted); border: 1px solid var(--rule); border-radius: 20px; padding: 1px 7px;
@@ -190,8 +199,15 @@
   <section data-panel="addons" hidden>
     <p class="hint" data-i18n="qmAddonsHint"></p>
     <div class="card">
-      <h3><span data-i18n="qmTranslate"></span><span class="soon" data-i18n="qmSoon"></span></h3>
+      <h3><span data-i18n="qmTranslate"></span><span class="soon" id="tr-badge"></span></h3>
       <p data-i18n="qmTranslateDesc"></p>
+
+      <label class="field" id="tr-field" hidden>
+        <span data-i18n="qmTargetLang"></span>
+        <select id="tr-target"></select>
+      </label>
+
+      <p class="fine" id="tr-note"></p>
     </div>
   </section>
 

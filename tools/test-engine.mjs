@@ -891,6 +891,47 @@ const MD_DOC = [
   });
 }
 
+
+// --- ceviri -----------------------------------------------------------------
+// jsdom'da Translator API'si YOK, ve bu testin zayifligi degil konusu: eklenti
+// Chrome 138 oncesinde, mobilde ve baska tarayicilarda da bu durumda calisiyor.
+// Olculen sey, API yokken hicbir seyin bozulmamasi.
+
+{
+  const { api } = await boot();
+
+  check('Translator yokken init bozulmaz', () => {
+    // Bu blogun boot() edebilmis olmasi zaten kanit; acikca yaziliyor cunku
+    // ceviri kodu init icinden cagriliyor ve orada patlarsa TUM eklenti olur.
+    truthy(api.state, 'motor ayakta');
+    eq(api.hasTranslator(), false, 'API yok olarak raporlaniyor');
+  });
+
+  check('hedef dil varsayilani ingilizce', () => {
+    eq(api.trPrefs.target, 'en', 'trPrefs.target');
+  });
+
+  check('hizli dil listesi hedef dili icerir', () => {
+    truthy(api.QUICK_LANGS.includes(api.trPrefs.target), 'liste hedefi kapsiyor');
+    truthy(api.QUICK_LANGS.length >= 5, 'anlamli uzunlukta');
+  });
+
+  check('dil adlari koddan URETILIR, listeden okunmaz', () => {
+    // Proje hicbir yerde dil adi listesi tutmuyor; adlar Intl.DisplayNames'ten
+    // geliyor. Bu, ceviri eklendiginde 30 dil adinin iki locale'e elle
+    // yazilmasini gerektirmedi.
+    const tr = api.langName('tr');
+    const ja = api.langName('ja');
+    truthy(tr && tr !== 'tr', 'tr icin bir ad uretildi: ' + tr);
+    truthy(ja && ja !== 'ja', 'ja icin bir ad uretildi: ' + ja);
+  });
+
+  check('bilinmeyen dil kodu koda geri duser', () => {
+    const x = api.langName('zzz');
+    truthy(typeof x === 'string' && x.length > 0, 'bos donmedi: ' + x);
+  });
+}
+
 // --- sonuc ------------------------------------------------------------------
 
 console.log(`\n${pass} gecti, ${failures.length} kaldi\n`);

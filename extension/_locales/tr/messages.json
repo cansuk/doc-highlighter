@@ -281,9 +281,6 @@
   "qmTranslate": {
     "message": "Çeviri"
   },
-  "qmSoon": {
-    "message": "Yakında"
-  },
   "qmTranslateDesc": {
     "message": "İşaretlediğin pasajı hedef dile çevir — cihaz üzerinde."
   },
@@ -325,5 +322,47 @@
   },
   "cmPreview": {
     "message": "Render / kaynak"
+  },
+  "tbTranslate": {
+    "message": "Çevir"
+  },
+  "tbTargetLang": {
+    "message": "Hedef dil"
+  },
+  "trWorking": {
+    "message": "Çevriliyor…"
+  },
+  "trDownloading": {
+    "message": "Dil modeli indiriliyor…"
+  },
+  "trAlready": {
+    "message": "Zaten hedef dilde."
+  },
+  "trKeep": {
+    "message": "Not olarak sakla"
+  },
+  "trUnavailable": {
+    "message": "Bu tarayıcıda çeviri kullanılamıyor."
+  },
+  "trNoPair": {
+    "message": "Bu dil çifti cihazda kullanılamıyor."
+  },
+  "trFailed": {
+    "message": "Çeviri başarısız."
+  },
+  "trNeedsChrome": {
+    "message": "Masaüstünde Chrome 138 veya üzeri gerekiyor. Modeli Chrome kendisi çalıştırıyor; burada mevcut değil."
+  },
+  "trModelNote": {
+    "message": "Cihazında çalışır. Bir dil çiftinin ilk kullanımında model indirilir — o indirmeyi Chrome yapar ve sayfa metni hiçbir yere gönderilmez."
+  },
+  "qmTargetLang": {
+    "message": "Şu dile çevir"
+  },
+  "qmReady": {
+    "message": "Hazır"
+  },
+  "qmUnavailable": {
+    "message": "Kullanılamıyor"
   }
 }
