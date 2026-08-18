@@ -79,6 +79,14 @@ The extension reads the address of the tab you are on only to tell you whether
 highlighting is available there.
 
 
+OPEN SOURCE
+
+The complete source code is public under the GPL-3.0 licence. Every claim above — no
+network request, storage that stays on your device — can be checked by reading it.
+
+https://github.com/cansuk/doc-highlighter
+
+
 REQUIREMENTS AND LIMITS
 
 • Chrome 105 or newer

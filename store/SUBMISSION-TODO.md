@@ -91,6 +91,25 @@ Not filled yet. Prepared answers are in `PUBLISHING.md`:
   stored, on the device only. Nothing is transmitted.
 - A privacy policy URL may be requested as a result of that tick — not written yet.
 
+### 3.5 Homepage / Support / Privacy policy URLs
+
+Hosted on the author's own domain rather than GitHub, so repo visibility and the store
+timeline stay independent. Pages are written and live in `site/`.
+
+| Field | Planned URL |
+|---|---|
+| Homepage | `/doc-highlighter/` → `site/index.html` |
+| Privacy policy | `/doc-highlighter/privacy` → `site/privacy.html` |
+| Support | GitHub Issues, or the contact address on the page |
+| Official URL | needs Google Search Console domain verification |
+
+**Blocked:** `multiappsoftwareservices.com` currently serves an expired TLS certificate —
+measured 17 Aug 2026: HTTP 301 to HTTPS, then Chrome refuses to render the page. The
+privacy policy URL must load cleanly before submission, or review can fail on a link
+that has nothing to do with the extension.
+
+Still to fill in `site/`: `CONTACT_EMAIL` (4 places) and `STORE_URL` (1 place).
+
 ### 4. Turkish listing — optional
 
 `store/listing-tr.txt` is ready. Add Turkish as a language in the dashboard and paste
@@ -103,7 +122,7 @@ that is consistent, though not required.
 
 - **Not minified.** Minified or obfuscated submissions take longer to review, and the
   package is 46.6 KB — there is nothing to gain.
-- **"Open source" is not claimed** in the listing while the repository is private. Add
-  it only once the repo is public.
+- **Repository is public** as of 18 August 2026, GPL-3.0. An OPEN SOURCE section with the
+  repo link is now part of both listings.
 - **Limits are stated in the description on purpose** (Chrome 105+, no notes/tags/
   search, weak persistence in some SPAs). Hiding them produces one-star reviews.
