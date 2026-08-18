@@ -1,6 +1,6 @@
 {
   "name": "doc-highlighter",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "private": true,
   "type": "module",
   "description": "Chrome extension — persistent highlighting for local .md/.html files and the web",

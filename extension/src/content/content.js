@@ -1537,14 +1537,19 @@
     :host { all: initial; }
     * { box-sizing: border-box; }
 
+    /* No border and no shadow: on a dark page a white ring around the dot reads as
+       a frame stuck onto the text rather than as part of the mark. State is shown
+       by colour and size instead of by an outline. */
     .dot {
-      position: absolute; width: 14px; height: 14px; padding: 0;
-      border-radius: 50% 50% 50% 2px; border: 1.5px solid #fff;
+      position: absolute; width: 12px; height: 12px; padding: 0; border: 0;
+      border-radius: 50% 50% 50% 2px;
       background: #2563eb; cursor: pointer; pointer-events: auto;
-      box-shadow: 0 1px 4px rgba(0,0,0,.35);
     }
-    .dot:hover { background: #1d4ed8; transform: scale(1.15); }
-    .dot[aria-expanded="true"] { background: #1d4ed8; outline: 2px solid rgba(37,99,235,.35); }
+    .dot:hover { background: #1d4ed8; transform: scale(1.2); }
+    .dot[aria-expanded="true"] { background: #1d4ed8; transform: scale(1.2); }
+    /* Keyboard users still need to see where they are; this is the one case where
+       a ring is the point rather than clutter. */
+    .dot:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
 
     .card {
       position: absolute; width: 268px; pointer-events: auto;
