@@ -319,5 +319,11 @@
   },
   "qmLocalOnly": {
     "message": "Hiçbir veri cihazdan çıkmaz"
+  },
+  "cmPanel": {
+    "message": "Paneli aç / kapat"
+  },
+  "cmPreview": {
+    "message": "Render / kaynak"
   }
 }

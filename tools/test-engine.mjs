@@ -95,7 +95,15 @@ async function boot(html = HTML, { url = 'https://ornek.test/sayfa?utm_source=x#
       sendMessage: async () => ({}),
       getManifest: () => ({ version: '0.0.0-test' }),
       getURL: (p) => `chrome-extension://test/${p}`,
-    },
+        // Baglanan dinleyiciler saklanir: komut kanalinin gercekten kaydolup
+        // kaydolmadigi ancak boyle olculebilir.
+        onMessage: {
+          listeners: [],
+          addListener(fn) {
+            this.listeners.push(fn);
+          },
+        },
+      },
     i18n: { getMessage: () => '' },
     storage: {
       local: {
@@ -786,6 +794,100 @@ const MD_DOC = [
   check('sayilar yanlislikla kod span i olmaz', () => {
     // Kod yer tutucusu bosluklarla sinirlansaydi "in 5 minutes" koda donerdi.
     truthy(!/<code>5<\/code>/.test(html), '5 koda donmedi');
+  });
+}
+
+
+// --- context menu komutlari -------------------------------------------------
+// Menunun kendisi service worker'da; secim ve sayfa ise content script'te. Ikisi
+// tek bir mesajla birlesiyor, dolayisiyla test edilecek yuzey runCommand.
+
+{
+  const { window, api } = await boot();
+  const doc = window.document;
+
+  check('komut kanali kaydedildi', () => {
+    truthy(window.chrome.runtime.onMessage.listeners.length > 0, 'onMessage dinleyicisi var');
+  });
+
+  const select = (from, to) => {
+    const p = doc.getElementById('p1');
+    const r = doc.createRange();
+    r.setStart(p.firstChild, from);
+    r.setEnd(p.firstChild, to);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(r);
+  };
+
+  select(0, 12);
+  await api.runCommand('color', 'green');
+
+  check('sag tik ile renk verilir', () => {
+    eq(api.state.highlights.length, 1, 'bir mark olustu');
+    eq(api.state.highlights[0].color, 'green', 'renk');
+  });
+
+  check('komut sonrasi secim birakilir', () => {
+    // Secim durursa bir sonraki sag tik ayni pasaji yeniden isaretler.
+    eq(window.getSelection().rangeCount, 0, 'secim temizlendi');
+  });
+
+  select(20, 32);
+  await api.runCommand('underline');
+
+  check('sag tik ile underline verilir', () => {
+    eq(api.state.highlights.length, 2, 'ikinci mark');
+    eq(api.state.highlights[1].underline, true, 'underline');
+  });
+
+  const beforeNote = api.state.highlights.length;
+  select(40, 52);
+  await api.runCommand('note');
+
+  check('sag tik not editorunu acar ama HENUZ YAZMAZ', () => {
+    // Kayit, kaydetme aninda olusur. Onceki tasarim once bos bir mark yaratip
+    // sonra dolduruyordu; vazgecen kullanicinin sayfasinda rengi, altcizgisi ve
+    // notu olmayan — yani gorunmeyen ve secilemeyen — bir kayit kaliyordu.
+    eq(api.state.highlights.length, beforeNote, 'hicbir kayit olusmadi');
+  });
+
+  const before = api.prefs.open;
+  await api.runCommand('panel');
+
+  check('sag tik paneli acip kapatir', () => {
+    eq(api.prefs.open, !before, 'panel durumu tersine dondu');
+  });
+
+  await api.runCommand('clear');
+
+  check('sag tik sayfayi temizler', () => {
+    eq(api.state.highlights.length, 0, 'hicbir mark kalmadi');
+  });
+
+  let threw = null;
+  try {
+    await api.runCommand('boyle-bir-komut-yok');
+  } catch (e) {
+    threw = e;
+  }
+
+  check('bilinmeyen komut PATLAMAZ', () => {
+    // Menu ve content script ayri ayri guncellenebilir; eski bir sekmeye yeni bir
+    // komut gelirse sessizce gecilmeli, sayfayi bozmamali.
+    eq(threw, null, 'istisna firlatmadi');
+  });
+}
+
+{
+  // Secim yokken secime bagli komutlar hicbir sey yapmamali.
+  const { api } = await boot();
+  await api.runCommand('color', 'yellow');
+  await api.runCommand('underline');
+  await api.runCommand('note');
+
+  check('secim yokken hicbir mark olusmaz', () => {
+    eq(api.state.highlights.length, 0, 'mark sayisi');
   });
 }
 

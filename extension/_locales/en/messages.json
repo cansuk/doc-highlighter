@@ -319,5 +319,11 @@
   },
   "qmLocalOnly": {
     "message": "Nothing leaves your device"
+  },
+  "cmPanel": {
+    "message": "Show / hide the panel"
+  },
+  "cmPreview": {
+    "message": "Rendered / source"
   }
 }

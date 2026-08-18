@@ -3,13 +3,14 @@
   "default_locale": "en",
   "name": "__MSG_extName__",
   "short_name": "__MSG_extShortName__",
-  "version": "0.13.1",
+  "version": "0.14.0",
   "description": "__MSG_extDescription__",
   "minimum_chrome_version": "105",
   "permissions": [
     "storage",
     "activeTab",
-    "scripting"
+    "scripting",
+    "contextMenus"
   ],
   "host_permissions": [
     "file:///*"

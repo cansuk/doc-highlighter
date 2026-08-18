@@ -1665,7 +1665,8 @@
 
   let nHost = null;
   let nShadow = null;
-  let noteOpenId = null; // the highlight whose card is currently open
+  let noteOpenId = null; // the highlight whose card is open, if it already exists
+  let notePendingRange = null; // a selection with no mark yet — created on save
 
   const NOTE_CSS = `
     :host { all: initial; }
@@ -1780,14 +1781,21 @@
   function closeNoteCard() {
     nShadow?.querySelector('.card')?.remove();
     noteOpenId = null;
+    notePendingRange = null;
     renderNoteDots();
   }
 
-  function openNoteCard(id) {
+  /**
+   * Opens the editor for an existing mark, or for a selection that has none yet.
+   * Nothing is written until save, so backing out leaves the document untouched.
+   */
+  function openNoteCard(id, pendingRange) {
     if (!nShadow) return;
-    const h = byId(id);
-    if (!h) return;
-    const l = live.get(id);
+    const h = id ? byId(id) : null;
+    if (!h && !pendingRange) return;
+
+    notePendingRange = h ? null : pendingRange;
+    const l = id ? live.get(id) : null;
 
     nShadow.querySelector('.card')?.remove();
     noteOpenId = id;
@@ -1798,11 +1806,11 @@
 
     const quote = document.createElement('p');
     quote.className = 'quote';
-    const raw = (h.anchor?.exact ?? '').replace(/\s+/g, ' ').trim();
+    const raw = (h?.anchor?.exact ?? pendingRange?.toString() ?? '').replace(/\s+/g, ' ').trim();
     quote.textContent = raw.length > 120 ? `${raw.slice(0, 120)}…` : raw;
 
     const ta = document.createElement('textarea');
-    ta.value = h.note ?? '';
+    ta.value = h?.note ?? '';
     ta.placeholder = msg('notePlaceholder', 'Write a note…');
 
     const actions = document.createElement('div');
@@ -1816,7 +1824,7 @@
 
     // Positioned below the end of the passage, clamped so it never hangs off the
     // right edge of the document.
-    const rects = l ? rectsOf(l.range) : [];
+    const rects = l ? rectsOf(l.range) : rectsOf(pendingRange);
     const last = rects[rects.length - 1];
     const left = last ? last.right + window.scrollX - 120 : window.scrollX + 40;
     const top = last ? last.bottom + window.scrollY + 10 : window.scrollY + 60;
@@ -1840,33 +1848,34 @@
     if (!btn) return;
     const act = btn.dataset.noteAct;
     const id = noteOpenId;
-    if (!id) return;
+    const pending = notePendingRange;
+    if (!id && !pending) return;
 
+    // Cancel and delete are the same thing when nothing exists yet: there is
+    // nothing to undo, because nothing was written.
     if (act === 'cancel') return closeNoteCard();
 
     if (act === 'delete') {
       closeNoteCard();
       // Removing the note does NOT remove the mark — unless the note was the only
       // thing keeping it alive, which patchHighlight decides.
-      return patchHighlight(id, { note: '' });
+      return id ? patchHighlight(id, { note: '' }) : undefined;
     }
 
     if (act === 'save') {
       const text = nShadow.querySelector('textarea')?.value.trim() ?? '';
       closeNoteCard();
-      return patchHighlight(id, { note: text });
+      if (!text) return id ? patchHighlight(id, { note: '' }) : undefined;
+      // The mark is born here, carrying the note, so an abandoned card never leaves
+      // an invisible record behind.
+      return id ? patchHighlight(id, { note: text }) : applyToSelection(pending, { note: text });
     }
   }
 
   /** Entry point from the selection toolbar. */
-  async function addNoteFromToolbar() {
+  function addNoteFromToolbar() {
     if (hoveredId) return openNoteCard(hoveredId);
-    if (!pendingRange) return;
-    // A note needs something to hang on, so it creates a mark. The mark carries no
-    // colour: the dot is the visible indicator, and the reader can still colour the
-    // passage separately if they want to.
-    const id = await applyToSelection(pendingRange, { note: ' ' });
-    if (id) openNoteCard(id);
+    if (pendingRange) openNoteCard(null, pendingRange);
   }
 
 
@@ -2161,6 +2170,52 @@
 
   // --- 10. startup ---------------------------------------------------------
 
+  /**
+   * One entry point for everything the context menu can ask for, so the menu never
+   * needs to know how any of it works.
+   */
+  async function runCommand(command, value) {
+    const sel = getSelection();
+    const range = sel && !sel.isCollapsed && sel.rangeCount ? sel.getRangeAt(0) : null;
+
+    switch (command) {
+      case 'color':
+        if (range) await applyToSelection(range, { color: value });
+        break;
+
+      case 'underline':
+        if (range) await applyToSelection(range, { underline: true });
+        break;
+
+      case 'note':
+        // The range is kept, not the selection: the card is about to take focus and
+        // clearing the selection below would otherwise take the range with it.
+        if (range) openNoteCard(null, range.cloneRange());
+        break;
+
+      case 'panel':
+        prefs.open = !prefs.open;
+        syncPanelChrome();
+        renderPanel();
+        await savePrefs();
+        break;
+
+      case 'preview':
+        // A no-op on anything that is not a raw .md file, rather than an error: the
+        // menu is one list for every page and cannot know what it is looking at.
+        if (canPreview()) setPreview(!prefs.preview);
+        break;
+
+      case 'clear':
+        await clearPage();
+        break;
+
+      default:
+        log(`${TAG} bilinmeyen komut: ${command}`);
+    }
+
+    sel?.removeAllRanges();
+  }
   function onMouseUp(e) {
     if (host?.contains(e.target)) return;
 
@@ -2327,6 +2382,21 @@
 
       watchDom();
 
+      // Commands from the context menu. The menu runs in the service worker, which can
+      // see neither the selection nor the page, so everything it offers is carried out
+      // here. getSelection() is still valid at this point: opening a context menu does
+      // not clear the selection.
+      chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+        if (msg?.type !== 'dh-command') return false;
+        runCommand(msg.command, msg.value)
+          .then(() => sendResponse({ ok: true }))
+          .catch((e) => {
+            log(`${TAG} komut basarisiz: ${msg.command}`, e);
+            sendResponse({ ok: false, error: String(e?.message ?? e) });
+          });
+        return true; // async response
+      });
+
       // The popup writes the palette; the page repaints without a reload. Storage
       // events are the only channel that reaches an already-injected script.
       chrome.storage.onChanged.addListener((changes, area) => {
@@ -2367,6 +2437,7 @@
         PALETTE,
         paletteCss,
         stamp,
+        runCommand,
         renderMarkdown,
         mdInline,
         canPreview,

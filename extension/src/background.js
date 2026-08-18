@@ -97,6 +97,96 @@ chrome.permissions.onRemoved.addListener((p) => {
   syncDynamicScripts();
 });
 
+// --- Context menu ----------------------------------------------------------
+// Same actions as the toolbar and the panel, reachable without moving the mouse
+// off the passage. The menu is rebuilt from scratch on every worker start:
+// removeAll first, because createContextMenus throws on a duplicate id and a
+// service worker can wake many times over.
+
+const COLORS = ['yellow', 'green', 'pink', 'blue', 'orange', 'purple'];
+const MENU_ROOT = 'dh-root';
+
+// Only where a content script can actually be listening. Without this the items
+// appear on chrome:// pages too and do nothing when pressed.
+const PATTERNS = ['file:///*', 'http://*/*', 'https://*/*'];
+
+const label = (key, fallback) => chrome.i18n.getMessage(key) || fallback;
+
+function buildContextMenu() {
+  chrome.contextMenus.removeAll(() => {
+    const root = { id: MENU_ROOT, title: label('extName', 'Doc Highlighter'), contexts: ['all'], documentUrlPatterns: PATTERNS };
+    chrome.contextMenus.create(root);
+
+    // Selection-only: highlighting something requires something to be selected,
+    // and an item that cannot work should not be offered.
+    for (const c of COLORS) {
+      chrome.contextMenus.create({
+        id: `dh-color-${c}`,
+        parentId: MENU_ROOT,
+        title: label(`tb${c[0].toUpperCase()}${c.slice(1)}`, c),
+        contexts: ['selection'],
+        documentUrlPatterns: PATTERNS,
+      });
+    }
+    chrome.contextMenus.create({
+      id: 'dh-underline', parentId: MENU_ROOT, title: label('tbUnderline', 'Underline'),
+      contexts: ['selection'], documentUrlPatterns: PATTERNS,
+    });
+    chrome.contextMenus.create({
+      id: 'dh-note', parentId: MENU_ROOT, title: label('tbNote', 'Note'),
+      contexts: ['selection'], documentUrlPatterns: PATTERNS,
+    });
+
+    chrome.contextMenus.create({
+      id: 'dh-sep1', parentId: MENU_ROOT, type: 'separator',
+      contexts: ['all'], documentUrlPatterns: PATTERNS,
+    });
+    chrome.contextMenus.create({
+      id: 'dh-panel', parentId: MENU_ROOT, title: label('cmPanel', 'Show / hide the panel'),
+      contexts: ['all'], documentUrlPatterns: PATTERNS,
+    });
+    chrome.contextMenus.create({
+      id: 'dh-preview', parentId: MENU_ROOT, title: label('cmPreview', 'Rendered / source'),
+      contexts: ['all'], documentUrlPatterns: PATTERNS,
+    });
+    chrome.contextMenus.create({
+      id: 'dh-sep2', parentId: MENU_ROOT, type: 'separator',
+      contexts: ['all'], documentUrlPatterns: PATTERNS,
+    });
+    chrome.contextMenus.create({
+      id: 'dh-clear', parentId: MENU_ROOT, title: label('tbClearAll', 'Clear all highlights on this page'),
+      contexts: ['all'], documentUrlPatterns: PATTERNS,
+    });
+
+    if (chrome.runtime.lastError) log('[DocHL] context menu:', chrome.runtime.lastError.message);
+  });
+}
+
+buildContextMenu();
+chrome.runtime.onInstalled.addListener(buildContextMenu);
+
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  if (tab?.id == null) return;
+
+  const id = String(info.menuItemId);
+  const command = id.startsWith('dh-color-')
+    ? 'color'
+    : { 'dh-underline': 'underline', 'dh-note': 'note', 'dh-panel': 'panel', 'dh-preview': 'preview', 'dh-clear': 'clear' }[id];
+  if (!command) return;
+
+  try {
+    await chrome.tabs.sendMessage(tab.id, {
+      type: 'dh-command',
+      command,
+      value: command === 'color' ? id.slice('dh-color-'.length) : undefined,
+    });
+  } catch {
+    // No content script on this tab — the page was open before the permission was
+    // granted, or this is a surface Chrome does not allow. Nothing to repair here;
+    // reloading the page is the fix and the popup already says so.
+    log('[DocHL] context menu: bu sekmede content script yok');
+  }
+});
 // --- Content script liveness channel ---------------------------------------
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {

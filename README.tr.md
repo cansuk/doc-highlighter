@@ -1,4 +1,4 @@
-# Doc Highlighter — Local HTML & Markdown · v0.13.1
+# Doc Highlighter — Local HTML & Markdown · v0.14.0
 
 Lokal `.md` / `.html` dosyalarında ve izin verdiğin web sitelerinde highlight ve
 underline; sekme kapansa da kalıcı.
