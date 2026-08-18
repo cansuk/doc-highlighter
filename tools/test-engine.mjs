@@ -489,6 +489,70 @@ check('ilgisiz aralik ortusme saymaz', () => {
   });
 }
 
+
+// --- navigator paneli: sayfa yerlesimi ve temasi ----------------------------
+// Bu uc test tarayicida bulunan uc kusurdan dogdu: panel kapali aciliyordu,
+// tema yalnizca paneli boyuyordu, ve panel metnin USTUNE biniyordu. Ucu de
+// jsdom'da gorunur; testsiz birakilirsa sessizce geri gelirler.
+
+{
+  const { window, api } = await boot();
+  const layout = () => window.document.getElementById('dh-page-layout');
+  const theme = () => window.document.getElementById('dh-page-theme');
+
+  check('panel varsayilan olarak ACIK gelir', () => {
+    eq(api.prefs.open, true, 'prefs.open');
+  });
+
+  check('panel acikken sayfayi ORTMEZ, yer acar', () => {
+    // 300 panel + 26 handle. Fixed konumlu panel viewport kenarinda kalir,
+    // html'in margin'i icerigi onun yanina sigdirir.
+    truthy(layout(), 'yerlesim stili enjekte edildi');
+    truthy(/margin-right:\s*326px/.test(layout().textContent), 'margin-right 326px, gelen: ' + layout().textContent.trim());
+  });
+
+  check('panel kapaliyken sadece handle genisligi rezerve edilir', () => {
+    api.prefs.open = false;
+    api.syncPanelChrome();
+    truthy(/margin-right:\s*26px/.test(layout().textContent), 'margin-right 26px, gelen: ' + layout().textContent.trim());
+    api.prefs.open = true;
+    api.syncPanelChrome();
+  });
+
+  check('panel sola alininca margin da sola gecer', () => {
+    api.prefs.side = 'left';
+    api.syncPanelChrome();
+    const css = layout().textContent;
+    truthy(/margin-left:\s*326px/.test(css), 'margin-left bekleniyordu, gelen: ' + css.trim());
+    truthy(!/margin-right/.test(css), 'margin-right kalmamali');
+    api.prefs.side = 'right';
+    api.syncPanelChrome();
+  });
+
+  check('tema auto iken sayfaya DOKUNULMAZ', () => {
+    api.prefs.theme = 'auto';
+    api.syncPanelChrome();
+    eq(theme(), null, 'auto temada sayfa stili olmamali');
+  });
+
+  check('tema dark iken TUM SAYFA boyanir, sadece panel degil', () => {
+    api.prefs.theme = 'dark';
+    api.syncPanelChrome();
+    const css = theme()?.textContent ?? '';
+    truthy(/html,\s*body/.test(css), 'html ve body hedefleniyor');
+    truthy(css.includes('#161c24'), 'koyu zemin rengi uygulanmis');
+  });
+
+  check('tema auto ya donunce sayfa stili KALDIRILIR', () => {
+    api.prefs.theme = 'dark';
+    api.syncPanelChrome();
+    truthy(theme(), 'once var');
+    api.prefs.theme = 'auto';
+    api.syncPanelChrome();
+    eq(theme(), null, 'sonra yok');
+  });
+}
+
 // --- sonuc ------------------------------------------------------------------
 
 console.log(`\n${pass} gecti, ${failures.length} kaldi\n`);

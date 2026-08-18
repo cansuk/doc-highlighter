@@ -963,7 +963,12 @@
   // per tab is the only sensible reading.
 
   const PREFS_KEY = 'dhPanelPrefs';
-  const prefs = { side: 'right', theme: 'auto', open: false };
+  const prefs = { side: 'right', theme: 'auto', open: true };
+
+  // Widths live here, not only in CSS: the page needs the same numbers to reserve
+  // room for the panel, and two hand-kept copies would drift apart.
+  const PANEL_W = 300;
+  const HANDLE_W = 26;
 
   let pHost = null;
   let pShadow = null;
@@ -1141,7 +1146,7 @@
     /* The handle stays on screen when the panel is closed. Without it there is no
        way back in: an extension cannot add a button to the browser's own chrome. */
     .handle {
-      align-self: center; width: 26px; height: 96px; cursor: pointer; padding: 0;
+      align-self: center; width: ${HANDLE_W}px; height: 96px; cursor: pointer; padding: 0;
       border: 1px solid var(--line); background: var(--panel); color: var(--muted);
       display: grid; place-items: center;
       writing-mode: vertical-rl; font: inherit; font-size: 11px; letter-spacing: .06em;
@@ -1151,7 +1156,7 @@
     .handle:hover { color: var(--ink); background: var(--panelHi); }
 
     .body {
-      width: 300px; display: flex; flex-direction: column;
+      width: ${PANEL_W}px; display: flex; flex-direction: column;
       background: var(--bg); color: var(--ink);
       border-left: 1px solid var(--line); border-right: 1px solid var(--line);
       box-shadow: 0 0 24px rgba(0,0,0,.14);
@@ -1201,6 +1206,74 @@
     .empty { padding: 16px 10px; color: var(--muted); font-size: 12px; }
   `;
 
+  /* --- page theme and layout --------------------------------------------------
+   * The panel lives in a shadow root, so nothing it does reaches the page. Both
+   * repainting the document and making room for the panel therefore need real
+   * stylesheets injected into the page.
+   *
+   * LAYOUT — the panel is position:fixed, so without this it would sit ON TOP of
+   * the text. Giving <html> a margin on the docked side shrinks the document box
+   * while the fixed panel stays at the viewport edge: the two stop overlapping.
+   * The handle's own width is reserved even when the panel is closed, so the text
+   * is never covered at all.
+   *
+   * THEME — scoped deliberately to html/body and the elements Chrome's plain-text
+   * and simple-document rendering actually produces. Deep per-component theming is
+   * NOT attempted: that is a whole product of its own (Dark Reader), it needs
+   * per-site work, and a half-done version looks worse than none. On a raw .md
+   * file — what this extension is for — these few rules ARE the whole document.
+   *
+   * Highlight colours are unaffected either way: ::highlight() paints its own
+   * background and its own ink, so a yellow mark stays readable on a dark page.
+   * ------------------------------------------------------------------------- */
+
+  const THEME_ID = 'dh-page-theme';
+  const LAYOUT_ID = 'dh-page-layout';
+
+  const PAGE_THEME = {
+    dark: `
+      html, body { background: #161c24 !important; color: #e8ecf1 !important; }
+      pre, code, kbd, samp, blockquote, table { background: #1f2937 !important; color: #e8ecf1 !important; }
+      a, a * { color: #7fb0ff !important; }
+      hr, th, td { border-color: #2d3947 !important; }
+      ::selection { background: #33507a; color: #fff; }
+    `,
+    light: `
+      html, body { background: #ffffff !important; color: #1f2937 !important; }
+      pre, code, kbd, samp, blockquote, table { background: #f4f5f7 !important; color: #1f2937 !important; }
+      a, a * { color: #b45309 !important; }
+      hr, th, td { border-color: #dfe3e8 !important; }
+    `,
+  };
+
+  /** Injects, updates or removes a page-level stylesheet owned by the extension. */
+  function pageStyle(id, css) {
+    const existing = document.getElementById(id);
+    if (!css) {
+      existing?.remove();
+      return;
+    }
+    const el = existing ?? document.createElement('style');
+    el.id = id;
+    el.setAttribute(UI_ATTR, '');
+    el.textContent = css;
+    if (!existing) document.head?.appendChild(el) ?? document.documentElement.appendChild(el);
+  }
+
+  function applyPageChrome() {
+    if (!isTopFrame) return;
+
+    // 'auto' means "do not touch the page": the document keeps whatever the site
+    // or Chrome gave it. Only an explicit light/dark choice repaints.
+    pageStyle(THEME_ID, PAGE_THEME[prefs.theme]);
+
+    const reserved = prefs.open ? PANEL_W + HANDLE_W : HANDLE_W;
+    pageStyle(
+      LAYOUT_ID,
+      `html { margin-${prefs.side}: ${reserved}px !important; transition: margin .18s ease; }`,
+    );
+  }
+
   function buildPanel() {
     pHost = document.createElement('div');
     pHost.setAttribute(UI_ATTR, '');
@@ -1230,6 +1303,7 @@
 
   /** Side, theme, open state, handle label, tab selection — everything but the lists. */
   function syncPanelChrome() {
+    applyPageChrome();
     if (!pShadow) return;
     const wrap = pShadow.querySelector('.wrap');
     wrap.dataset.side = prefs.side;
@@ -1528,6 +1602,9 @@
         applyAll,
         collectHeadings,
         isRawTextDocument,
+        prefs,
+        applyPageChrome,
+        syncPanelChrome,
       };
 
       // Full state on one line: this tells you at which stage a problem occurs.

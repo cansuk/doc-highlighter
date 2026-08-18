@@ -130,7 +130,21 @@ That frame **cannot** be a `::highlight()` rule: the API ignores `border` and
 absolutely positioned overlay, computed from `getClientRects()` and removed when the
 animation ends — the page structure is still never modified.
 
-Side, theme (auto / light / dark) and open state are remembered in
+**It reserves space, it does not cover the text.** The panel is `position: fixed`, so
+without help it would sit on top of the document. Giving `<html>` a margin on the
+docked side shrinks the document box while the panel stays at the viewport edge, and
+the two stop overlapping. The handle keeps its own 26px reserved even when the panel is
+closed, so nothing is ever hidden behind it.
+
+**The theme repaints the page, not just the panel.** `light` and `dark` inject a
+stylesheet into the document itself; `auto` injects nothing and leaves the page exactly
+as the site or Chrome rendered it. Theming is scoped to `html`/`body` and the elements
+plain-text rendering actually produces — deep per-component theming is not attempted,
+because that is a product of its own and a half-done version looks worse than none.
+Highlight colours are unaffected either way: `::highlight()` paints its own background
+and its own ink, so a yellow mark stays readable on a dark page.
+
+The panel is **open by default**. Side, theme (auto / light / dark) and open state are remembered in
 `chrome.storage.local`. The panel is built in the **top frame only**: inside an iframe
 it would be trapped in the frame's box, and pages that embed their content would end up
 with two of them.
