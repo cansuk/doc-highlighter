@@ -13,8 +13,8 @@
  *     (Ilk denemede pink #ffa8c5 ile orange #ffb066 luminance'i BIREBIR ayni
  *      cikti — fark 0.000. Orange koyulastirilarak ayrildi.)
  *
- * Renkler content.js'ten OKUNUR, burada tekrar yazilmaz — iki yerde tutulan
- * palet kacinilmaz olarak ayrisir.
+ * Renkler content.js'teki PALETTE'ten OKUNUR, burada tekrar yazilmaz. CSS de ayni
+ * sabitten uretildigi icin ortada ayrisabilecek ikinci bir kopya yok.
  */
 
 import { readFile } from 'node:fs/promises';
@@ -29,18 +29,27 @@ const MIN_LUM_GAP = 0.03; // ikili luminance ayrimi
 
 const source = await readFile(SRC, 'utf8');
 
-// ::highlight(dh-x) { background-color: #hex; color: #hex; }
-const colors = {};
-let ink = null;
-for (const m of source.matchAll(
-  /::highlight\(dh-([a-z]+)\)\s*\{\s*background-color:\s*(#[0-9a-fA-F]{6});\s*color:\s*(#[0-9a-fA-F]{6})/g,
-)) {
-  colors[m[1]] = m[2];
-  ink = m[3];
+// Renkler artik CSS'e elle yazilmiyor, PALETTE'ten URETILIYOR. Dolayisiyla
+// denetlenecek tek kaynak da PALETTE.
+const paletteBlock = source.match(/const PALETTE = \{([\s\S]*?)\};/);
+const inkMatch = source.match(/const INK = '(#[0-9a-fA-F]{6})'/);
+
+if (!paletteBlock || !inkMatch) {
+  console.error('content.js icinde PALETTE ya da INK bulunamadi — regex bayatlamis olabilir');
+  process.exit(1);
 }
 
+const ink = inkMatch[1];
+const colors = Object.fromEntries(
+  [...paletteBlock[1].matchAll(/(\w+):\s*'(#[0-9a-fA-F]{6})'/g)]
+    .map((m) => [m[1], m[2]])
+    // underline bir zemin rengi degil, cizgi rengi: kontrast/luminance olcutleri
+    // ona uygulanmaz.
+    .filter(([name]) => name !== 'underline'),
+);
+
 if (!Object.keys(colors).length) {
-  console.error('content.js icinde ::highlight kurali bulunamadi — regex bayatlamis olabilir');
+  console.error('PALETTE bos gorunuyor — regex bayatlamis olabilir');
   process.exit(1);
 }
 
@@ -62,33 +71,6 @@ const rows = Object.entries(colors).map(([name, hex]) => {
   return { renk: name, hex, luminance: lum(hex).toFixed(3), kontrast: `${c.toFixed(2)}:1` };
 });
 
-/*
- * 3. PALETTE ile CSS AYNI OLMALI. Panel cipleri hex degerlerini CSS'ten degil
- *    PALETTE sabitinden okuyor; ayni renk iki yerde yaziliyor. Cogaltma ancak
- *    bir denetim onu bagliyorsa guvenli — burasi o denetim.
- */
-const paletteBlock = source.match(/const PALETTE = \{([\s\S]*?)\};/);
-if (!paletteBlock) {
-  console.error('content.js icinde PALETTE sabiti bulunamadi — regex bayatlamis olabilir');
-  process.exit(1);
-}
-const palette = Object.fromEntries(
-  [...paletteBlock[1].matchAll(/(\w+):\s*'(#[0-9a-fA-F]{6})'/g)].map((m) => [m[1], m[2]]),
-);
-
-const paletteProblems = [];
-for (const [name, hex] of Object.entries(colors)) {
-  if (name === 'underline') continue;
-  if (!palette[name]) paletteProblems.push(`PALETTE'te ${name} yok (CSS'te var)`);
-  else if (palette[name].toLowerCase() !== hex.toLowerCase()) {
-    paletteProblems.push(`${name}: PALETTE ${palette[name]} != CSS ${hex}`);
-  }
-}
-for (const name of Object.keys(palette)) {
-  if (!colors[name]) paletteProblems.push(`CSS'te ${name} yok (PALETTE'te var)`);
-}
-problems.push(...paletteProblems);
-
 const names = Object.keys(colors);
 let closest = { gap: Infinity, pair: '' };
 for (let i = 0; i < names.length; i++) {
@@ -101,7 +83,7 @@ for (let i = 0; i < names.length; i++) {
   }
 }
 
-console.log(`ink: ${ink}  |  renk: ${names.length}  |  PALETTE: ${Object.keys(palette).length} (CSS ile eslesiyor)`);
+console.log(`ink: ${ink}  |  renk: ${names.length}  |  kaynak: PALETTE (CSS bundan uretiliyor)`);
 console.table(rows);
 console.log(`en yakin cift: ${closest.pair} — luminance farki ${closest.gap.toFixed(3)}`);
 

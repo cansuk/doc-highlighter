@@ -88,6 +88,15 @@
    * values too; tools/check-colors.mjs fails the build if the two ever disagree,
    * which is what makes the duplication safe.
    */
+  /** The ink every highlight prints in. One value, referenced everywhere. */
+  const INK = '#1f2937';
+  const UNDERLINE_INK = '#e11d48';
+
+  /** User overrides, merged over the defaults. Empty until something is changed. */
+  const PALETTE_KEY = 'dhPalette';
+  let custom = {};
+  const swatch = (name) => custom[name] || PALETTE[name];
+
   const PALETTE = {
     yellow: '#ffd54a',
     green: '#8ee6a8',
@@ -95,7 +104,8 @@
     blue: '#9ecbff',
     orange: '#ff9c47',
     purple: '#d9c4ff',
-  };
+      underline: '#e11d48',
+    };
 
   /* ---------------------------------------------------------------------------
    * BOLD IS ON HOLD (Aug 2026)
@@ -473,6 +483,35 @@
 
   const live = new Map(); // id -> { style, range }
 
+  /**
+   * Written out rather than hand-maintained. That is what makes the palette
+   * customisable at all: one colour value now produces BOTH the ::highlight rule
+   * and the inline-gap fill rule, so the two cannot drift apart.
+   */
+  function paletteCss() {
+    const rules = COLORS.map(
+      (c) => `::highlight(dh-${c}) { background-color: ${swatch(c)}; color: ${INK}; }`,
+    );
+    rules.push(
+      `::highlight(dh-underline) { text-decoration: underline 2px ${swatch('underline') || UNDERLINE_INK}; }`,
+    );
+    // Inline gap fill — see the INLINE GAP FILL note. These paint the ELEMENT,
+    // which is the only way to cover its padding; the highlight API cannot.
+    for (const c of COLORS) {
+      rules.push(
+        `[data-dh-fill="${c}"] { background-color: ${swatch(c)} !important; color: ${INK} !important; }`,
+      );
+    }
+    return rules.join('\n');
+  }
+
+  /** Re-paints after the palette is changed from the popup. */
+  function refreshPalette() {
+    const el = document.getElementById('dh-styles');
+    if (el) el.textContent = paletteCss();
+    refreshToolbarSwatches();
+    renderPanelSafe();
+  }
   function ensureStyleSheet() {
     if (document.getElementById('dh-styles')) return;
     // ::highlight() accepts ONLY paint properties: color, background-color,
@@ -487,22 +526,7 @@
     //    and orange had EXACTLY the same luminance (gap 0.000) — orange was
     //    darkened to separate them.
     const css = `
-      ::highlight(dh-yellow)    { background-color: #ffd54a; color: #1f2937; }
-      ::highlight(dh-green)     { background-color: #8ee6a8; color: #1f2937; }
-      ::highlight(dh-pink)      { background-color: #ffa8c5; color: #1f2937; }
-      ::highlight(dh-blue)      { background-color: #9ecbff; color: #1f2937; }
-      ::highlight(dh-orange)    { background-color: #ff9c47; color: #1f2937; }
-      ::highlight(dh-purple)    { background-color: #d9c4ff; color: #1f2937; }
-      ::highlight(dh-underline) { text-decoration: underline 2px #e11d48; }
-
-      /* Inline gap fill — see the INLINE GAP FILL note. These paint the ELEMENT,
-         which is the only way to cover its padding; the highlight API cannot. */
-      [data-dh-fill="yellow"] { background-color: #ffd54a !important; color: #1f2937 !important; }
-      [data-dh-fill="green"]  { background-color: #8ee6a8 !important; color: #1f2937 !important; }
-      [data-dh-fill="pink"]   { background-color: #ffa8c5 !important; color: #1f2937 !important; }
-      [data-dh-fill="blue"]   { background-color: #9ecbff !important; color: #1f2937 !important; }
-      [data-dh-fill="orange"] { background-color: #ff9c47 !important; color: #1f2937 !important; }
-      [data-dh-fill="purple"] { background-color: #d9c4ff !important; color: #1f2937 !important; }
+      ${paletteCss()}
 
       /* Focus frame shown after jumping from the navigator panel. A frame cannot be
          drawn with ::highlight() — that API ignores border and outline — so this
@@ -686,12 +710,13 @@
         .bar.dead { color:#ffd54a; padding:8px 12px; max-width:280px; line-height:1.4; }
       </style>
       <div class="bar">
-        <button data-color="yellow" style="background:#ffd54a" title="${msg('tbYellow', 'Yellow')}"></button>
-        <button data-color="green"  style="background:#8ee6a8" title="${msg('tbGreen', 'Green')}"></button>
-        <button data-color="pink"   style="background:#ffa8c5" title="${msg('tbPink', 'Pink')}"></button>
-        <button data-color="blue"   style="background:#9ecbff" title="${msg('tbBlue', 'Blue')}"></button>
-        <button data-color="orange" style="background:#ff9c47" title="${msg('tbOrange', 'Orange')}"></button>
-        <button data-color="purple" style="background:#d9c4ff" title="${msg('tbPurple', 'Purple')}"></button>
+        ${COLORS.map(
+          (c) =>
+            `<button data-color="${c}" style="background:${swatch(c)}" title="${msg(
+              'tb' + c[0].toUpperCase() + c.slice(1),
+              c,
+            )}"></button>`,
+        ).join('')}
         <span class="sep"></span>
         <button data-act="underline" class="u" title="${msg('tbUnderline', 'Underline')}">U</button>
         <!-- ERTELENDI (bkz. "BOLD ERTELENDI" notu):
@@ -718,6 +743,13 @@
    * off. Turns the toolbar into a notice, so the user is not left clicking with
    * nothing happening.
    */
+  /** Toolbar swatches carry inline colours, so they do not follow the stylesheet. */
+  function refreshToolbarSwatches() {
+    if (!shadow) return;
+    for (const b of shadow.querySelectorAll('button[data-color]')) {
+      b.style.background = swatch(b.dataset.color);
+    }
+  }
   function reportDead() {
     if (dead) return;
     dead = true;
@@ -1281,6 +1313,10 @@
       overflow-wrap: anywhere;
     }
 
+    .when {
+      display: block; margin-top: 3px; color: var(--muted);
+      font-size: 10px; letter-spacing: .02em; font-variant-numeric: tabular-nums;
+    }
     .note-chip { background: #2563eb; border-color: transparent; }
     .note-lead { display: block; }
     .note-quote {
@@ -1407,6 +1443,33 @@
     }
   }
 
+  /**
+   * Short, and relative where that reads better: something marked an hour ago is
+   * "14:32", something from last month is a date. The exact timestamp lives on the
+   * title attribute for anyone who needs it.
+   */
+  function stamp(ts) {
+    if (!ts) return null;
+    const d = new Date(ts);
+    const sameDay = d.toDateString() === new Date().toDateString();
+    const lang = chrome.i18n.getUILanguage?.() || undefined;
+    const el = document.createElement('span');
+    el.className = 'when';
+    el.textContent = sameDay
+      ? d.toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })
+      : d.toLocaleDateString(lang, { day: '2-digit', month: 'short' });
+    el.title = d.toLocaleString(lang);
+    return el;
+  }
+
+  /** The palette can change before the panel exists; that is not a failure. */
+  const renderPanelSafe = () => {
+    try {
+      renderPanel();
+    } catch {
+      /* panel not built yet */
+    }
+  };
   function renderPanel() {
     if (!pShadow || !prefs.open) return;
     const list = pShadow.querySelector('.list');
@@ -1481,6 +1544,8 @@
           const q = document.createElement('span');
           q.className = 'note-quote';
           q.textContent = raw.length > 70 ? `${raw.slice(0, 70)}…` : raw;
+          const whenNote = stamp(h.createdAt);
+          if (whenNote) t.appendChild(whenNote);
           t.appendChild(q);
         }
 
@@ -1523,6 +1588,8 @@
         const n = document.createElement('span');
         n.className = 'note';
         n.textContent = h.note.replace(/\s+/g, ' ').trim();
+        const whenMark = stamp(h.createdAt);
+        if (whenMark) t.appendChild(whenMark);
         t.appendChild(n);
       }
 
@@ -2233,6 +2300,14 @@
         return;
       }
 
+      // Read before the sheet is written, so the first paint already uses the user's
+      // colours instead of flashing the defaults.
+      try {
+        const got = await chrome.storage.local.get(PALETTE_KEY);
+        custom = got[PALETTE_KEY] ?? {};
+      } catch {
+        custom = {};
+      }
       ensureStyleSheet();
       buildToolbar();
       buildNoteLayer();
@@ -2251,6 +2326,14 @@
       });
 
       watchDom();
+
+      // The popup writes the palette; the page repaints without a reload. Storage
+      // events are the only channel that reaches an already-injected script.
+      chrome.storage.onChanged.addListener((changes, area) => {
+        if (area !== 'local' || !changes[PALETTE_KEY]) return;
+        custom = changes[PALETTE_KEY].newValue ?? {};
+        refreshPalette();
+      });
 
       // Diagnostics + test surface. The anchoring functions are exposed as well:
       // tools/test-engine.mjs verifies them under jsdom, with no browser needed.
@@ -2281,6 +2364,9 @@
         openNoteCard,
         closeNoteCard,
         renderNoteDots,
+        PALETTE,
+        paletteCss,
+        stamp,
         renderMarkdown,
         mdInline,
         canPreview,
