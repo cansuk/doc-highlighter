@@ -27,7 +27,7 @@
 ### Adımlar
 
 1. **Developer hesabı aç** → https://chrome.google.com/webstore/devconsole — $5 tek seferlik
-2. **Yeni öğe** → `dist/doc-highlighter-0.8.0.zip` yükle
+2. **Yeni öğe** → `dist/doc-highlighter-0.8.1.zip` yükle
 3. **Store listing** doldur: ad, açıklama, kategori (*Tools*), dil, 128×128 ikon, ekran görüntüsü
 4. **Privacy practices** → aşağıdaki beyanlar
 5. **Gönder** → review

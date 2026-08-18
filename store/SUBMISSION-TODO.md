@@ -3,7 +3,7 @@
 Live tracking of the listing. Update as fields are filled.
 
 **Item:** Doc Highlighter — Local HTML & Markdown
-**Package:** `dist/doc-highlighter-0.8.0.zip` (46.6 KB)
+**Package:** `dist/doc-highlighter-0.8.1.zip` (46.6 KB) — adds `minimum_chrome_version: 105`
 **Category:** Tools
 
 ---
@@ -12,7 +12,7 @@ Live tracking of the listing. Update as fields are filled.
 
 | Field | Source | Note |
 |---|---|---|
-| Package upload | `dist/doc-highlighter-0.8.0.zip` | ✅ uploaded |
+| Package upload | `dist/doc-highlighter-0.8.1.zip` | ⬜ **re-upload needed** — 0.8.0 is the one currently uploaded |
 | Category | Tools | ✅ selected |
 | Store icon 128×128 | `store/listing-icon-128.png` | ✅ 96×96 artwork + 16px transparent padding, per Google's rule |
 | Short description | `store/listing-en.txt` (top block) | 100 / 132 characters |
