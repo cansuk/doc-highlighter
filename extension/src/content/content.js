@@ -798,6 +798,8 @@
    * would be wrong because the width varies with theme and language.
    */
   function showToolbar(rect) {
+  // Prepared here, off the click. See the note on detectedSource.
+    prepareSource();
     host.style.display = 'block';
 
     const w = host.offsetWidth || 250;
@@ -813,6 +815,22 @@
     host.style.left = `${left}px`;
   }
 
+  /**
+   * Detects the language of the current selection in the background, so pressing
+   * translate does not have to wait for it. Failure is silent on purpose: this is
+   * preparation, not the operation, and the fallback is the document language.
+   */
+  function prepareSource() {
+    detectedSource = null;
+    const text = (pendingRange ?? getSelection()?.getRangeAt?.(0))?.toString?.().trim();
+    if (!text || !hasTranslator()) return;
+    detectLang(text).then(
+      (code) => {
+        detectedSource = code;
+      },
+      () => {},
+    );
+  }
   function hideToolbar() {
   shadow?.querySelector('.langs')?.remove();
     if (host) host.style.display = 'none';
@@ -1750,6 +1768,8 @@
     }
     .tr-out { font-size: 13px; line-height: 1.5; max-height: 190px; overflow-y: auto;
               border-left: 2px solid #2563eb; padding-left: 8px; }
+    .tr-why { font: 11px/1.45 ui-monospace, Consolas, monospace; color: var(--muted);
+              margin-top: 6px; overflow-wrap: anywhere; }
     .actions { display: flex; gap: 6px; margin-top: 7px; }
     .actions button {
       border-radius: 6px; cursor: pointer; font: inherit; font-size: 12px;
@@ -2232,6 +2252,11 @@
 
   const hasTranslator = () => typeof self.Translator?.create === 'function';
 
+  // Filled in when the toolbar opens, read when translate is pressed. Keeping the
+  // click free of awaits is the point: the user gesture Translator.create() needs
+  // is transient, and every await before it is a chance to lose it.
+  let detectedSource = null;
+
   let langNames = null;
   function langName(code) {
     try {
@@ -2288,11 +2313,11 @@
     if (!hasTranslator()) throw new Error('NO_API');
 
     const target = trPrefs.target;
-    const source = await detectLang(text);
+    // Prepared when the toolbar opened. Falling back to the document language keeps
+    // the click free of awaits even when detection never ran.
+    const source =
+      detectedSource ?? (document.documentElement.lang || navigator.language || 'en').split('-')[0];
     if (source === target) return { source, target, text, same: true };
-
-    const state = await Translator.availability({ sourceLanguage: source, targetLanguage: target });
-    if (state === 'unavailable') throw new Error('PAIR_UNAVAILABLE');
 
     const translator = await Translator.create({
       sourceLanguage: source,
@@ -2400,12 +2425,18 @@
 
       openTranslateCard(kept, trCardBody([head, body, ta, actions]));
     } catch (e) {
-      const why =
-        e?.message === 'PAIR_UNAVAILABLE'
-          ? msg('trNoPair', 'This language pair is not available on the device.')
-          : msg('trFailed', 'Translation failed.');
-      log(`${TAG} ceviri basarisiz`, e);
-      openTranslateCard(kept, trCardBody([trLine('quote', why)]));
+      // The cause is shown, not hidden behind one sentence. Chrome reports several
+      // distinct conditions here — no gesture, an unsupported origin, a pair with no
+      // model — and collapsing them into "failed" deletes the only useful part.
+      console.warn(`${TAG} ceviri basarisiz:`, e);
+      const detail = `${e?.name ?? 'Error'}: ${e?.message ?? String(e)}`;
+      openTranslateCard(
+        kept,
+        trCardBody([
+          trLine('quote', msg('trFailed', 'Translation failed.')),
+          trLine('tr-why', detail),
+        ]),
+      );
     }
   }
 
