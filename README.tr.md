@@ -1,11 +1,12 @@
-# Doc Highlighter — Local HTML & Markdown · v0.10.0
+# Doc Highlighter — Local HTML & Markdown · v0.10.1
 
 Lokal `.md` / `.html` dosyalarında ve izin verdiğin web sitelerinde highlight ve
 underline; sekme kapansa da kalıcı.
 
 | Sürüm | Ne geldi |
 |---|---|
-| **0.10.0** | **Sticky note** — herhangi bir pasaja not yazilabiliyor. Not ayri bir nesne degil, highlight kaydinin bir alani; boylece anchor sistemi aynen kullaniliyor ve dokuman degisince not da metinle birlikte tasiniyor. Notu olan pasajin sonunda kucuk bir nokta cikiyor, tiklayinca kart aciliyor. Notlar panelin Highlight sekmesinde de gorunuyor |
+| **0.10.1** | Panel handle'i markanin sarisiyla ve glow ile cizildi — onceki hali panelin kendi soluk renklerindeydi ve yogun bir sayfada gorunmuyordu. Genislik degisimi rezerve edilen sayfa margin'ine kendiliginden yansidi (ikisi ayni sabiti okuyor) |
+| 0.10.0 | **Sticky note** — herhangi bir pasaja not yazilabiliyor. Not ayri bir nesne degil, highlight kaydinin bir alani; boylece anchor sistemi aynen kullaniliyor ve dokuman degisince not da metinle birlikte tasiniyor. Notu olan pasajin sonunda kucuk bir nokta cikiyor, tiklayinca kart aciliyor. Notlar panelin Highlight sekmesinde de gorunuyor |
 | 0.9.0 | **Navigator paneli** — sol/sag kenara yaslanan, acilip kapanan panel. Bir sekmede dokuman iskeleti (icindekiler), digerinde tum highlight listesi; tiklayinca o noktaya kayiyor ve kisa sureli bir cerceve ciziliyor. Ham `.md` dosyalarinda basliklar `#` sozdiziminden cikariliyor (DOM'da baslik yok). Acik/koyu tema ve panel tarafi hatirlaniyor |
 | 0.8.1 | `minimum_chrome_version: 105` — eski Chrome artık kurulumu reddediyor. Öncesinde kurulabiliyor ama `CSS.highlights` olmadığı için sessizce çalışmıyordu |
 | 0.8.0 | **Tümünü temizle** butonu — silgi ikonu, iki adımlı onay. Storage kaydını da siliyor |
