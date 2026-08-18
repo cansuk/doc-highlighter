@@ -1,0 +1,64 @@
+NO ACCOUNT OR LOGIN IS REQUIRED. There is no sign-in, no server, and the extension
+makes no network requests at all.
+
+However, TWO ACCESS SWITCHES MUST BE TURNED ON BY HAND. Chrome does not allow an
+extension to grant either of them itself. Without them the extension will look like it
+does nothing, so please follow one of the two paths below.
+
+Requires Chrome 105 or newer (the CSS Custom Highlight API).
+
+
+================================================================
+A) FASTEST CHECK — on a web page, about 30 seconds
+================================================================
+1. Click the Doc Highlighter icon in the toolbar to open the popup.
+2. Click "Enable on all sites" and accept Chrome's permission prompt.
+   Website access is declared as an OPTIONAL host permission, so it is deliberately
+   NOT requested at install time — it is granted here, by the user.
+3. Open any article page, for example:
+   https://developer.mozilla.org/en-US/docs/Web/API/CSS_Custom_Highlight_API
+4. Select a sentence with the mouse. A small toolbar appears above the selection.
+5. Click one of the six colour swatches. The passage is highlighted.
+6. With the same text still selected, click "U". Colour and underline combine —
+   pressing one never clears the other.
+7. Reload the page. The marks are still there. This is the core feature.
+
+
+================================================================
+B) MAIN USE CASE — a local file, needs one Chrome switch
+================================================================
+1. Open chrome://extensions, find Doc Highlighter, click "Details".
+2. Turn ON "Allow access to file URLs".
+   The extension CANNOT enable this itself; Chrome reserves it for the user. Flipping
+   it restarts the extension, so please open a new tab afterwards.
+3. Download a ready test file:
+   https://raw.githubusercontent.com/cansuk/doc-highlighter/main/test-pages/sample.html
+   (a Markdown one is at .../main/test-pages/sample.md — Markdown needs a viewer
+   extension, HTML does not, so the .html file is the simpler check)
+4. Open the saved file in Chrome with Ctrl+O. The address bar must show file:///...
+5. Select text, pick a colour, then reload the page. The marks return.
+
+
+================================================================
+ALSO WORTH LOOKING AT
+================================================================
+- Pressing the same colour or underline again removes it.
+- The eraser button clears every highlight on the page, behind a two-step
+  confirmation ("Delete all N?" — click again to confirm).
+- The popup shows the current file-access state, an "Enable on this site" switch and
+  an "Enable on all sites" switch. Access can be revoked from the same place.
+- An onboarding page opens on install and explains the file-access switch; it detects
+  the moment the switch is turned on.
+
+
+================================================================
+ON DATA AND NETWORK
+================================================================
+There is nothing to observe on the network. The package contains no fetch,
+XMLHttpRequest, WebSocket or sendBeacon call, no external script tag, and no remote
+code of any kind. Highlights are kept in chrome.storage.local and never leave the
+device. "Website content" is declared in the privacy form because the highlighted
+passages themselves are stored locally.
+
+Full source code, public and GPL-3.0:
+https://github.com/cansuk/doc-highlighter
