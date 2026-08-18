@@ -2,6 +2,15 @@
 
 Live tracking of the listing. Update as fields are filled.
 
+> **DURUM — 18.08.2026: 0.8.0 incelemeye gönderildi.** Panelde "İncelenmeyi bekliyor".
+> Paket inceleme boyunca **kilitli**; "Yeni paket yükle" pasif. Listing alanları
+> düzenlenebilir durumda.
+>
+> **0.8.1 hazır ve bekliyor** (`dist/doc-highlighter-0.8.1.zip`, `minimum_chrome_version: 105`).
+> Onay geldikten sonra **ilk güncelleme** olarak yüklenecek. Gönderimi iptal edip 0.8.1'i
+> koymak kuyruğun sonuna düşürürdü; 0.8.1 sertleştirme olduğu ve Chrome 105 Ağustos
+> 2022'de çıktığı için beklemek tercih edildi.
+
 **Item:** Doc Highlighter — Local HTML & Markdown
 **Package:** `dist/doc-highlighter-0.8.1.zip` (46.6 KB) — adds `minimum_chrome_version: 105`
 **Category:** Tools
