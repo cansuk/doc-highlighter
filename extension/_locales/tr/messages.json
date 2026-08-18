@@ -265,5 +265,53 @@
   },
   "pnlPreview": {
     "message": "Render / kaynak"
+  },
+  "qmQuick": {
+    "message": "Hızlı"
+  },
+  "qmPalette": {
+    "message": "Palet"
+  },
+  "qmPlugins": {
+    "message": "Eklentiler"
+  },
+  "qmAbout": {
+    "message": "Hakkında"
+  },
+  "qmPaletteHint": {
+    "message": "Kendi renklerini seç. Metinle kontrastı seçerken gösterilir; 7:1 altına inince WCAG AAA karşılanmaz."
+  },
+  "qmReset": {
+    "message": "Varsayılanlara dön"
+  },
+  "qmContrastLow": {
+    "message": "WCAG AAA altında — bu renk üzerindeki metin zor okunabilir"
+  },
+  "qmContrastOk": {
+    "message": "WCAG AAA karşılanıyor"
+  },
+  "qmPluginsHint": {
+    "message": "İsteğe bağlı ekler; sen açmadıkça kapalı."
+  },
+  "qmTranslate": {
+    "message": "Çeviri"
+  },
+  "qmSoon": {
+    "message": "Yakında"
+  },
+  "qmTranslateDesc": {
+    "message": "İşaretlediğin pasajı hedef dile çevir — cihaz üzerinde."
+  },
+  "qmTagline": {
+    "message": "Geri gelen işaretler"
+  },
+  "qmSource": {
+    "message": "Kaynak kod"
+  },
+  "qmIssues": {
+    "message": "Sorun bildir"
+  },
+  "qmPrivacy": {
+    "message": "Gizlilik politikası"
   }
 }

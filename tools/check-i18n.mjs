@@ -105,6 +105,15 @@ for (const rel of files) {
     for (const m of text.matchAll(/['"]([A-Za-z0-9_]+)['"]/g)) {
       if (baseKeys.has(m[1])) used.add(m[1]);
     }
+    // Calisma aninda kurulan anahtarlar:  t('tb' + name)  ya da  msg(`tb${x}`, ...)
+    // Onek bir literal oldugu icin yakalanabiliyor; o oneki paylasan her anahtar
+    // KULLANILMIS sayilir. Alternatifi bir allowlist olurdu, ama o zaman bir sonraki
+    // GERCEKTEN olu anahtar da gorunmez olurdu.
+    for (const m of text.matchAll(/['"`]([A-Za-z][A-Za-z0-9_]*)['"`]\s*\+/g)) {
+      const prefix = m[1];
+      if (prefix.length < 2) continue;
+      for (const k of baseKeys) if (k !== prefix && k.startsWith(prefix)) used.add(k);
+    }
   }
 }
 

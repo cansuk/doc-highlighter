@@ -265,5 +265,53 @@
   },
   "pnlPreview": {
     "message": "Rendered / source"
+  },
+  "qmQuick": {
+    "message": "Quick"
+  },
+  "qmPalette": {
+    "message": "Palette"
+  },
+  "qmPlugins": {
+    "message": "Plugins"
+  },
+  "qmAbout": {
+    "message": "About"
+  },
+  "qmPaletteHint": {
+    "message": "Pick your own colours. The contrast against the text is shown as you choose; below 7:1 it stops meeting WCAG AAA."
+  },
+  "qmReset": {
+    "message": "Restore defaults"
+  },
+  "qmContrastLow": {
+    "message": "Below WCAG AAA — text on this colour may be hard to read"
+  },
+  "qmContrastOk": {
+    "message": "Meets WCAG AAA"
+  },
+  "qmPluginsHint": {
+    "message": "Optional extras, off unless you turn them on."
+  },
+  "qmTranslate": {
+    "message": "Translate"
+  },
+  "qmSoon": {
+    "message": "Soon"
+  },
+  "qmTranslateDesc": {
+    "message": "Translate a highlighted passage into your target language, on the device."
+  },
+  "qmTagline": {
+    "message": "Marks that come back"
+  },
+  "qmSource": {
+    "message": "Source code"
+  },
+  "qmIssues": {
+    "message": "Report an issue"
+  },
+  "qmPrivacy": {
+    "message": "Privacy policy"
   }
 }
