@@ -31,6 +31,9 @@ underlined.
 **A navigator panel** docks to either edge: the document outline on one tab, every
 highlight on the other. Clicking a row scrolls to it and frames it briefly.
 
+**Sticky notes.** Write a note on any passage. A small dot marks it, and the note
+opens where you left it.
+
 ## What makes it different
 
 **Local first. Nothing leaves your device.**
@@ -96,6 +99,7 @@ Chrome blocks every extension there.
 | 🟡 🟢 🩷 🔵 🟠 🟣 | Apply that colour |
 | **U** | Underline |
 | **×** | Delete the highlight under the cursor |
+| 💬 | Write a note on the passage |
 | 🧽 | Clear **all** highlights on the page (two-step confirmation) |
 
 The navigator panel opens from the handle docked at the edge of the page.
@@ -148,6 +152,42 @@ The panel is **open by default**. Side, theme (auto / light / dark) and open sta
 `chrome.storage.local`. The panel is built in the **top frame only**: inside an iframe
 it would be trapped in the frame's box, and pages that embed their content would end up
 with two of them.
+
+## Sticky notes
+
+A note belongs to a **highlight** rather than being its own object. The anchoring
+system already exists, is tested, and relocates text when the document changes; a
+second anchor system for standalone notes would buy nothing. So the record simply
+grows a field:
+
+```js
+{ id, color, underline, note, anchor: { exact, prefix, suffix, start, end }, createdAt }
+```
+
+Writing a note therefore creates a mark, which means a note can never be left floating
+with nothing to attach to. The mark carries **no colour** — the dot is the indicator,
+and you can colour the passage separately if you want to.
+
+Two consequences fall out of that and both are enforced by tests:
+
+- a mark that has only a note is **not deleted**, even though it has no colour and no
+  underline (the rule that removes styleless marks had to learn about notes)
+- clearing the note from a *coloured* mark leaves the mark alone
+
+Nothing is inserted into the text. `::highlight()` cannot render an indicator and the
+engine never mutates page structure, so the dot and the card are absolutely positioned
+overlays inside **one** shadow layer — page CSS cannot reach them, and a single host
+serves any number of notes. The dot sits just past the end of the passage; when a
+highlight wraps, that is the last visual line, which is where a reader's eye ends up.
+
+Notes appear in the panel's **Highlights** tab on the row they belong to, rather than in
+a tab of their own — splitting them out would make you hold two lists in your head to
+answer one question.
+
+Geometry access is total: if `getClientRects()` is unavailable or throws, the dot is
+simply not drawn. It used to propagate out of `renderNoteDots()` and kill painting for
+every highlight on the page — a rendering helper must never be able to take down the
+anchoring pipeline.
 
 ## How it works
 
@@ -226,7 +266,7 @@ __docHL.dump()           // always prints: keys, hash, anchor resolution table
   tried and rejected. See the `BOLD IS ON HOLD` note in `src/content/content.js`.
 - **Weak persistence in some SPAs.** Applications that rewrite the URL via
   `pushState` after load can end up keyed under the pre-navigation URL.
-- **Notes, tags and search do not exist yet.**
+- **Tags and search do not exist yet.** Notes do — see below.
 - **Highlights are sharp-cornered rectangles, by design.** Rounded corners and padding
   would require wrapping the text in a real element — exactly what this engine avoids.
   Measured: `::highlight()` parses `border-radius` and `padding` into the CSSOM and then

@@ -241,5 +241,20 @@
   },
   "pnlOrphan": {
     "message": "Bu metin şu an sayfada değil."
+  },
+  "tbNote": {
+    "message": "Not"
+  },
+  "notePlaceholder": {
+    "message": "Bir not yaz…"
+  },
+  "noteSave": {
+    "message": "Kaydet"
+  },
+  "noteCancel": {
+    "message": "Vazgeç"
+  },
+  "noteDelete": {
+    "message": "Sil"
   }
 }

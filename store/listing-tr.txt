@@ -56,6 +56,16 @@ uzun bir dosyada isaretini bir daha kaybetmiyorsun.
 Panel hangi tarafta durdugunu ve acik mi koyu mu tercih ettigini hatirliyor.
 
 
+PASAJA NOT YAZ
+
+Bir cumleyi sec, not butonuna bas, yaz. Pasajin sonunda kucuk bir nokta beliriyor;
+tikladiginda notun biraktigin yerde aciliyor.
+
+Notlar ait olduklari isaretle birlikte saklaniyor; doküman duzenlenip pasaj yer
+degistirdiginde not da onunla birlikte tasiniyor. Panelde de, ait olduklari
+highlight'in satirinda listeleniyorlar.
+
+
 SAYFAYI BOZMAZ
 
 İşaretleme, metnini fazladan elementlerle sarmalayarak değil, CSS Custom Highlight API
@@ -107,6 +117,6 @@ GEREKSİNİMLER VE SINIRLAR
 • Chrome 105 veya üzeri
 • Chrome hiçbir eklentinin chrome:// sayfalarında, Web Store'da ve diğer eklentilerin
   sayfalarında çalışmasına izin vermez
-• Not, etiket ve arama henüz yok
+• Etiket ve arama henüz yok
 • Bazı tek sayfa uygulamaları yüklendikten sonra adresini değiştirir; bu, bir işaretin
   yeniden bulunmasını zorlaştırabilir

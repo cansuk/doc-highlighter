@@ -241,5 +241,20 @@
   },
   "pnlOrphan": {
     "message": "This text is not on the page right now."
+  },
+  "tbNote": {
+    "message": "Note"
+  },
+  "notePlaceholder": {
+    "message": "Write a note…"
+  },
+  "noteSave": {
+    "message": "Save"
+  },
+  "noteCancel": {
+    "message": "Cancel"
+  },
+  "noteDelete": {
+    "message": "Delete"
   }
 }

@@ -553,6 +553,115 @@ check('ilgisiz aralik ortusme saymaz', () => {
   });
 }
 
+
+// --- sticky note ------------------------------------------------------------
+// Not, ayri bir nesne degil, highlight kaydinin bir ALANI. Bu secimin iki sonucu
+// var ve ikisi de burada dogrulaniyor: (1) not eklemek bir mark olusturur,
+// (2) rengi olmayan ama notu olan bir mark SILINMEZ.
+//
+// NOT: check() geri cagrisini await ETMEZ. Async is check DISINDA yapilir, geri
+// cagri senkron kalir — aksi halde iddialara hic ulasilmadan test "gecti" sayilir.
+
+{
+  const { window, api } = await boot();
+  const doc = window.document;
+  const p = doc.getElementById('p1');
+  const mk = (from, to, patch) => {
+    const r = doc.createRange();
+    r.setStart(p.firstChild, from);
+    r.setEnd(p.firstChild, to);
+    return api.applyToSelection(r, patch);
+  };
+
+  const noteId = await mk(3, 20, { note: 'bunu test et' });
+  const created = api.state.highlights.find((x) => x.id === noteId);
+
+  check('not eklemek renksiz bir mark olusturur', () => {
+    truthy(noteId, 'id dondu');
+    truthy(created, 'kayit var');
+    eq(created.color, null, 'renk yok');
+    eq(created.underline, false, 'underline yok');
+    eq(created.note, 'bunu test et', 'not metni');
+  });
+
+  // patchHighlight rengi/underline i olmayan marklari siler; notun bu kurali
+  // degistirmesi gerekiyordu, yoksa mark kaydedilir kaydedilmez yok olurdu.
+  const countBefore = api.state.highlights.length;
+  await api.patchHighlight(noteId, { note: 'guncellendi' });
+  const afterPatch = api.state.highlights.find((x) => x.id === noteId);
+
+  check('notu olan mark renk verilmeden AYAKTA kalir', () => {
+    eq(api.state.highlights.length, countBefore, 'kayit sayisi degismedi');
+    truthy(afterPatch, 'mark duruyor');
+    eq(afterPatch.note, 'guncellendi', 'not guncellendi');
+  });
+
+  await api.patchHighlight(noteId, { note: '' });
+  const afterClear = api.state.highlights.find((x) => x.id === noteId);
+
+  check('not silinince renksiz mark da gider', () => {
+    eq(afterClear, undefined, 'mark kaldirildi');
+  });
+
+  const colouredId = await mk(25, 40, { color: 'yellow', note: 'gecici' });
+  await api.patchHighlight(colouredId, { note: '' });
+  const coloured = api.state.highlights.find((x) => x.id === colouredId);
+
+  check('rengi olan markta not silmek marki KORUR', () => {
+    truthy(coloured, 'mark duruyor');
+    eq(coloured.color, 'yellow', 'rengi korundu');
+    eq(coloured.note, undefined, 'not gitti');
+  });
+
+  const saved = await window.chrome.storage.local.get(null);
+  const docRec = Object.entries(saved).find(([k]) => k.startsWith('doc:'))?.[1];
+
+  check('mark diske yazilir ve geri okunur', () => {
+    truthy(docRec, 'doc kaydi var');
+    truthy(docRec.highlights.some((h) => h.color === 'yellow'), 'sari kayit diskte');
+  });
+}
+
+{
+  // Nokta gostergesi YALNIZCA notu olan highlightlarda cikar; her markta ciksa
+  // gosterge bilgi degil gurultu olur.
+  const { window, api } = await boot();
+  const doc = window.document;
+  const p = doc.getElementById('p1');
+  const mk = (from, to, patch) => {
+    const r = doc.createRange();
+    r.setStart(p.firstChild, from);
+    r.setEnd(p.firstChild, to);
+    return api.applyToSelection(r, patch);
+  };
+
+  await mk(0, 10, { color: 'green' }); // notsuz
+  await mk(15, 25, { note: 'notlu olan' }); // notlu
+
+  check('yalnizca bir mark not tasir', () => {
+    eq(api.state.highlights.filter((h) => h.note).length, 1, 'notlu mark sayisi');
+    eq(api.state.highlights.length, 2, 'toplam mark');
+  });
+
+  // renderNoteDots geometriye dokunur; jsdom'da Range.getClientRects YOK. Bu
+  // cagrinin PATLAMAMASI testin kendisidir: bir render yardimcisi applyAll i
+  // devirirse sayfadaki TUM highlightlar boyanmaz olur.
+  let threw = null;
+  try {
+    api.renderNoteDots();
+  } catch (e) {
+    threw = e;
+  }
+
+  check('renderNoteDots geometri yokken de PATLAMAZ', () => {
+    eq(threw, null, 'istisna firlatmadi');
+  });
+
+  check('geometri yokken bile highlightlar cizili kalir', () => {
+    eq(api.live.size, 2, 'iki mark hala live');
+  });
+}
+
 // --- sonuc ------------------------------------------------------------------
 
 console.log(`\n${pass} gecti, ${failures.length} kaldi\n`);

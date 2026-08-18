@@ -56,6 +56,16 @@ lose a mark in a long file again.
 The panel remembers which side you put it on, and whether you prefer light or dark.
 
 
+WRITE A NOTE ON A PASSAGE
+
+Select a sentence, press the note button, and write. A small dot appears at the end of
+the passage; click it and your note opens exactly where you left it.
+
+Notes are stored with the mark they belong to, so when the document is edited and the
+passage moves, the note travels with it. They are listed in the panel as well, on the
+row of the highlight they belong to.
+
+
 IT DOES NOT BREAK THE PAGE
 
 Highlighting is drawn with the CSS Custom Highlight API rather than by wrapping your
@@ -107,6 +117,6 @@ REQUIREMENTS AND LIMITS
 • Chrome 105 or newer
 • Chrome does not let any extension work on chrome:// pages, the Web Store, or other
   extensions' pages
-• Notes, tags and search do not exist yet
+• Tags and search do not exist yet
 • Some single-page applications rewrite their address after loading, which can make a
   mark harder to find again

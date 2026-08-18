@@ -23,7 +23,8 @@
  *   5  render       — CSS Custom Highlight API; page structure is never changed
  *   6  toolbar      — mini toolbar that appears over a selection (shadow DOM)
  *   7  navigator    — docked outline + highlight list, click to jump (shadow DOM)
- *   8  startup
+ *   8  notes        — sticky notes attached to a highlight (shadow overlay layer)
+ *   9  startup
  */
 
 (() => {
@@ -616,6 +617,7 @@
     paint();
     fillInlineGaps();
     refreshPanel(index);
+    renderNoteDots();
     // log(), NOT console.warn(): an orphan is not a failure, it is expected
     // behaviour (the page text changed). Left as a warn it landed in the
     // chrome://extensions Errors list and drowned out real errors. The count is
@@ -636,6 +638,12 @@
     'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
     '<path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0' +
     'l5.999 6a2 2 0 0 1 0 2.828L12.834 21"/><path d="m5.082 11.09 8.828 8.828"/></svg>';
+
+  // Lucide "message-square" — ISC, (c) Lucide Icons and Contributors (see NOTICE).
+  const NOTE_ICON =
+    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" ' +
+    'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
 
   function buildToolbar() {
     host = document.createElement('div');
@@ -664,6 +672,8 @@
         .u  { color:#fff; font-size:13px; text-decoration:underline 2px #e11d48; }
         .b  { color:#fff; font-size:13px; font-weight:800; }
         .rm { color:#fff; font-size:15px; line-height:1; }
+        .nt { color:#fff; }
+        .nt svg { display:block; }
         .clr{ color:#fff; }
         .clr svg { display:block; }
         /* Awaiting confirmation: the button turns into text and takes the danger
@@ -685,6 +695,8 @@
         <button data-act="underline" class="u" title="${msg('tbUnderline', 'Underline')}">U</button>
         <!-- ERTELENDI (bkz. "BOLD ERTELENDI" notu):
         <button data-act="bold" class="b" title="${msg('tbBold', 'Bold')}">B</button> -->
+        <span class="sep"></span>
+        <button data-act="note" class="nt" title="${msg('tbNote', 'Note')}">${NOTE_ICON}</button>
         <span class="sep"></span>
         <button data-act="clear-all" class="clr" title="${msg('tbClearAll', 'Clear all highlights on this page')}">${ERASER}</button>
         <button data-act="remove" class="rm" title="${msg('tbRemove', 'Remove')}">×</button>
@@ -803,6 +815,12 @@
     // Pressing any other button cancels a pending clear-all.
     disarmClear();
 
+    if (btn.dataset.act === 'note') {
+      await addNoteFromToolbar();
+      hideToolbar();
+      return;
+    }
+
     if (btn.dataset.act === 'remove') {
       if (hoveredId) await removeHighlight(hoveredId);
       hideToolbar();
@@ -873,8 +891,10 @@
 
     if (patch.color) h.color = h.color === patch.color ? null : patch.color;
     if (patch.underline) h.underline = !h.underline;
+    // A note is SET, not toggled: an empty string means "remove the note".
+    if (patch.note !== undefined) h.note = patch.note.trim() || undefined;
 
-    if (!h.color && !h.underline) {
+    if (!h.color && !h.underline && !h.note) {
       state.highlights = state.highlights.filter((x) => x.id !== id);
       log(`${TAG} stil kalmadi -> highlight kaldirildi`);
     }
@@ -893,12 +913,16 @@
     }
 
     const existing = findOverlapping(off.start, off.end);
-    if (existing) return patchHighlight(existing.id, patch);
+    if (existing) {
+      await patchHighlight(existing.id, patch);
+      return existing.id;
+    }
 
     const h = {
       id: newId(),
       color: patch.color ?? null,
       underline: !!patch.underline,
+      note: patch.note?.trim() || undefined,
       anchor: makeAnchor(index, off.start, off.end),
       createdAt: Date.now(),
     };
@@ -906,6 +930,7 @@
     await save();
     applyAll(index);
     log(`${TAG} highlight eklendi (${h.color ?? '-'}${h.underline ? ' + underline' : ''}):`, h.anchor.exact.slice(0, 40));
+    return h.id;
   }
 
   async function removeHighlight(id) {
@@ -1059,6 +1084,19 @@
    * document permanently and the page structure is never altered.
    * -------------------------------------------------------------------------- */
 
+  /**
+   * Client rects, or an empty list — never a throw. Geometry is presentation: if it
+   * is unavailable the dot or the frame is simply not drawn, and the anchoring and
+   * painting pipeline above carries on untouched.
+   */
+  function rectsOf(target) {
+    try {
+      return typeof target?.getClientRects === 'function' ? [...target.getClientRects()] : [];
+    } catch {
+      return [];
+    }
+  }
+
   const FOCUS_ATTR = 'data-dh-focus';
   let frameTimer = null;
 
@@ -1109,7 +1147,7 @@
     });
     // Client rects are viewport-relative, so they are re-read after the scroll
     // settles — measuring before it would frame the old position.
-    setTimeout(() => focusFrame([...range.getClientRects()]), 400);
+    setTimeout(() => focusFrame(rectsOf(range)), 400);
   }
 
   function jumpToElement(el) {
@@ -1202,6 +1240,12 @@
     .chip { width: 11px; height: 11px; border-radius: 3px; margin-top: 3px; flex: none;
             border: 1px solid rgba(0,0,0,.18); }
     .chip.u { background: repeating-linear-gradient(180deg, transparent 0 7px, #e11d48 7px 9px); }
+
+    .note {
+      display: block; margin-top: 3px; padding-left: 6px;
+      border-left: 2px solid #2563eb; color: var(--muted); font-size: 12px;
+      overflow-wrap: anywhere;
+    }
 
     .empty { padding: 16px 10px; color: var(--muted); font-size: 12px; }
   `;
@@ -1378,6 +1422,17 @@
       t.className = 't';
       const raw = (h.anchor?.exact ?? '').replace(/\s+/g, ' ').trim();
       t.textContent = raw.length > 90 ? `${raw.slice(0, 90)}…` : raw;
+
+      // The note lives on the same row rather than in a tab of its own: it belongs
+      // to this mark, and splitting it out would make the reader hold two lists in
+      // their head to answer one question.
+      if (h.note) {
+        const n = document.createElement('span');
+        n.className = 'note';
+        n.textContent = h.note.replace(/\s+/g, ' ').trim();
+        t.appendChild(n);
+      }
+
       b.appendChild(t);
       return b;
     });
@@ -1429,7 +1484,221 @@
     renderPanel();
   }
 
-  // --- 8. startup ---------------------------------------------------------
+  // --- 8. sticky notes -------------------------------------------------------
+  // A note belongs to a highlight rather than being its own object: the anchoring
+  // system already exists, is tested, and relocates text when the document changes.
+  // A second anchor system for standalone notes would buy nothing.
+  //
+  // Nothing is inserted into the text. ::highlight() cannot render an indicator and
+  // the engine never mutates page structure, so the dot and the card are absolutely
+  // positioned overlays in ONE shadow layer — page CSS cannot reach them, and a
+  // single host serves any number of notes.
+
+  const NOTE_LAYER_Z = 2147483644;
+
+  let nHost = null;
+  let nShadow = null;
+  let noteOpenId = null; // the highlight whose card is currently open
+
+  const NOTE_CSS = `
+    :host { all: initial; }
+    * { box-sizing: border-box; }
+
+    .dot {
+      position: absolute; width: 14px; height: 14px; padding: 0;
+      border-radius: 50% 50% 50% 2px; border: 1.5px solid #fff;
+      background: #2563eb; cursor: pointer; pointer-events: auto;
+      box-shadow: 0 1px 4px rgba(0,0,0,.35);
+    }
+    .dot:hover { background: #1d4ed8; transform: scale(1.15); }
+    .dot[aria-expanded="true"] { background: #1d4ed8; outline: 2px solid rgba(37,99,235,.35); }
+
+    .card {
+      position: absolute; width: 268px; pointer-events: auto;
+      background: var(--bg); color: var(--ink);
+      border: 1px solid var(--line); border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.22);
+      font: 13px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+      padding: 9px;
+      --bg:#fffdf3; --ink:#1f2937; --muted:#6b7280; --line:#e6dfc4;
+    }
+    .card[data-theme="dark"] { --bg:#1f2937; --ink:#e8ecf1; --muted:#95a1b0; --line:#2d3947; }
+
+    textarea {
+      width: 100%; min-height: 84px; resize: vertical; display: block;
+      border: 1px solid var(--line); border-radius: 6px; padding: 6px 7px;
+      background: transparent; color: var(--ink);
+      font: inherit; line-height: 1.45; outline: none;
+    }
+    textarea:focus { border-color: #2563eb; }
+
+    .quote {
+      color: var(--muted); font-size: 11px; margin: 0 0 6px; line-height: 1.4;
+      max-height: 32px; overflow: hidden; border-left: 2px solid var(--line); padding-left: 6px;
+    }
+    .actions { display: flex; gap: 6px; margin-top: 7px; }
+    .actions button {
+      border-radius: 6px; cursor: pointer; font: inherit; font-size: 12px;
+      padding: 4px 9px; border: 1px solid var(--line); background: transparent; color: var(--ink);
+    }
+    .actions .primary { background: #2563eb; border-color: #2563eb; color: #fff; font-weight: 600; }
+    .actions .danger { color: #c5221f; margin-left: auto; }
+    .actions button:hover { filter: brightness(.95); }
+  `;
+
+  function buildNoteLayer() {
+    nHost = document.createElement('div');
+    nHost.setAttribute(UI_ATTR, '');
+    // Zero-sized, non-interactive host anchored at the document origin: children
+    // position themselves in DOCUMENT coordinates, so scrolling never moves them
+    // and no repositioning work is needed on scroll.
+    nHost.style.cssText =
+      `position:absolute;top:0;left:0;width:0;height:0;pointer-events:none;z-index:${NOTE_LAYER_Z}`;
+    nShadow = nHost.attachShadow({ mode: 'closed' });
+    nShadow.innerHTML = `<style>${NOTE_CSS}</style>`;
+    document.documentElement.appendChild(nHost);
+    nShadow.addEventListener('click', onNoteLayerClick);
+  }
+
+  /**
+   * Dots for every note whose text is currently on the page. Called from applyAll,
+   * so they follow re-anchoring, resize and DOM mutation without their own watcher.
+   * Only highlights that HAVE a note get a dot — a marker on every highlight would
+   * be noise, not information.
+   */
+  function renderNoteDots() {
+    try {
+      renderNoteDotsUnsafe();
+    } catch (e) {
+      // Logged, NOT swallowed silently: an empty catch here would hide a real
+      // regression behind "the dots just stopped appearing one day".
+      log(`${TAG} not gostergeleri cizilemedi`, e);
+    }
+  }
+
+  function renderNoteDotsUnsafe() {
+    if (!nShadow) return;
+    for (const d of nShadow.querySelectorAll('.dot')) d.remove();
+
+    const sx = window.scrollX;
+    const sy = window.scrollY;
+
+    for (const h of state.highlights) {
+      if (!h.note) continue;
+      const l = live.get(h.id);
+      if (!l) continue; // orphan: the text is not on this page right now
+
+      const rects = rectsOf(l.range);
+      const last = rects[rects.length - 1];
+      if (!last) continue;
+
+      const dot = document.createElement('button');
+      dot.className = 'dot';
+      dot.dataset.note = h.id;
+      dot.title = h.note.length > 60 ? `${h.note.slice(0, 60)}…` : h.note;
+      dot.setAttribute('aria-expanded', String(noteOpenId === h.id));
+      // Sits just past the END of the highlight. When a highlight wraps, the last
+      // rect is the last visual line, which is where a reader's eye ends up.
+      dot.style.left = `${last.right + sx + 2}px`;
+      dot.style.top = `${last.top + sy - 3}px`;
+      nShadow.appendChild(dot);
+    }
+  }
+
+  function closeNoteCard() {
+    nShadow?.querySelector('.card')?.remove();
+    noteOpenId = null;
+    renderNoteDots();
+  }
+
+  function openNoteCard(id) {
+    if (!nShadow) return;
+    const h = byId(id);
+    if (!h) return;
+    const l = live.get(id);
+
+    nShadow.querySelector('.card')?.remove();
+    noteOpenId = id;
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.theme = prefs.theme === 'dark' ? 'dark' : 'light';
+
+    const quote = document.createElement('p');
+    quote.className = 'quote';
+    const raw = (h.anchor?.exact ?? '').replace(/\s+/g, ' ').trim();
+    quote.textContent = raw.length > 120 ? `${raw.slice(0, 120)}…` : raw;
+
+    const ta = document.createElement('textarea');
+    ta.value = h.note ?? '';
+    ta.placeholder = msg('notePlaceholder', 'Write a note…');
+
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+    actions.innerHTML =
+      `<button class="primary" data-note-act="save">${msg('noteSave', 'Save')}</button>` +
+      `<button data-note-act="cancel">${msg('noteCancel', 'Cancel')}</button>` +
+      `<button class="danger" data-note-act="delete">${msg('noteDelete', 'Delete')}</button>`;
+
+    card.append(quote, ta, actions);
+
+    // Positioned below the end of the passage, clamped so it never hangs off the
+    // right edge of the document.
+    const rects = l ? rectsOf(l.range) : [];
+    const last = rects[rects.length - 1];
+    const left = last ? last.right + window.scrollX - 120 : window.scrollX + 40;
+    const top = last ? last.bottom + window.scrollY + 10 : window.scrollY + 60;
+    card.style.left = `${Math.max(8, Math.min(left, window.scrollX + window.innerWidth - 288))}px`;
+    card.style.top = `${top}px`;
+
+    nShadow.appendChild(card);
+    renderNoteDots();
+    ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+  }
+
+  async function onNoteLayerClick(e) {
+    const dot = e.target.closest?.('.dot');
+    if (dot) {
+      const id = dot.dataset.note;
+      return noteOpenId === id ? closeNoteCard() : openNoteCard(id);
+    }
+
+    const btn = e.target.closest?.('[data-note-act]');
+    if (!btn) return;
+    const act = btn.dataset.noteAct;
+    const id = noteOpenId;
+    if (!id) return;
+
+    if (act === 'cancel') return closeNoteCard();
+
+    if (act === 'delete') {
+      closeNoteCard();
+      // Removing the note does NOT remove the mark — unless the note was the only
+      // thing keeping it alive, which patchHighlight decides.
+      return patchHighlight(id, { note: '' });
+    }
+
+    if (act === 'save') {
+      const text = nShadow.querySelector('textarea')?.value.trim() ?? '';
+      closeNoteCard();
+      return patchHighlight(id, { note: text });
+    }
+  }
+
+  /** Entry point from the selection toolbar. */
+  async function addNoteFromToolbar() {
+    if (hoveredId) return openNoteCard(hoveredId);
+    if (!pendingRange) return;
+    // A note needs something to hang on, so it creates a mark. The mark carries no
+    // colour: the dot is the visible indicator, and the reader can still colour the
+    // passage separately if they want to.
+    const id = await applyToSelection(pendingRange, { note: ' ' });
+    if (id) openNoteCard(id);
+  }
+
+
+  // --- 9. startup ---------------------------------------------------------
 
   function onMouseUp(e) {
     if (host?.contains(e.target)) return;
@@ -1564,6 +1833,7 @@
 
       ensureStyleSheet();
       buildToolbar();
+      buildNoteLayer();
       if (isTopFrame) {
         await loadPrefs();
         buildPanel();
@@ -1575,7 +1845,11 @@
       document.addEventListener('mouseup', onMouseUp);
       document.addEventListener('scroll', hideToolbar, { passive: true });
       window.addEventListener('resize', () => applyAll(buildIndex()), { passive: true });
-      document.addEventListener('keydown', (e) => e.key === 'Escape' && hideToolbar());
+      document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (noteOpenId) return closeNoteCard();
+        hideToolbar();
+      });
 
       watchDom();
 
@@ -1603,6 +1877,9 @@
         collectHeadings,
         isRawTextDocument,
         prefs,
+        openNoteCard,
+        closeNoteCard,
+        renderNoteDots,
         applyPageChrome,
         syncPanelChrome,
       };
