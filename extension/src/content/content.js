@@ -1735,6 +1735,11 @@
 
   const NOTE_LAYER_Z = 2147483644;
 
+  // Ids that have already pulsed on this page. renderNoteDots runs on every
+  // re-anchor, so without this the animation would restart on every resize and
+  // every DOM change, beside text somebody is reading.
+  const pulsed = new Set();
+
   let nHost = null;
   let nShadow = null;
   let noteOpenId = null; // the highlight whose card is open, if it already exists
@@ -1749,15 +1754,36 @@
        by colour and size instead of by an outline. */
     .dot {
       position: absolute; width: 12px; height: 12px; padding: 0; border: 0;
-      cursor: pointer; pointer-events: auto;
+      cursor: pointer; pointer-events: auto; background: var(--c);
     }
     /* Written by the reader: the folded corner of a sticky note, in amber. */
-    .dot.from-me { background: #d97706; border-radius: 50% 50% 50% 2px; }
-    .dot.from-me:hover, .dot.from-me[aria-expanded="true"] { background: #b45309; }
+    .dot.from-me { --c: #d97706; --c-on: #b45309; border-radius: 50% 50% 50% 2px; }
     /* Produced by the translator: round, blue, no corner to fold. */
-    .dot.from-tr { background: #2563eb; border-radius: 50%; }
-    .dot.from-tr:hover, .dot.from-tr[aria-expanded="true"] { background: #1d4ed8; }
-    .dot:hover, .dot[aria-expanded="true"] { transform: scale(1.2); }
+    .dot.from-tr { --c: #2563eb; --c-on: #1d4ed8; border-radius: 50%; }
+    .dot:hover, .dot[aria-expanded="true"] { background: var(--c-on); transform: scale(1.2); }
+
+    /* Both rings inherit border-radius, so they take the shape of the dot they
+       surround — the label reads even when the ring is all that is visible. */
+    .dot::before, .dot::after {
+      content: ''; position: absolute; inset: -3px;
+      border-radius: inherit; pointer-events: none;
+    }
+    /* Always there: enough to find, not enough to distract. */
+    .dot::before { border: 1.5px solid var(--c); opacity: .34; }
+    /* Once, on arrival. See the note above on why it does not repeat. */
+    .dot::after { border: 2px solid var(--c); opacity: 0; }
+    .dot.fresh::after { animation: dh-dot-pulse 1.5s ease-out 3; animation-delay: var(--delay, 0ms); }
+
+    @keyframes dh-dot-pulse {
+      0%   { transform: scale(.8);  opacity: .75; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+
+    /* Anyone who has asked the system to calm animations down keeps the halo and
+       loses the pulse — the information stays, the movement goes. */
+    @media (prefers-reduced-motion: reduce) {
+      .dot.fresh::after { animation: none; }
+    }
     /* Keyboard users still need to see where they are; this is the one case where
        a ring is the point rather than clutter. */
     .dot:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
@@ -1832,6 +1858,7 @@
   function renderNoteDotsUnsafe() {
     if (!nShadow) return;
     for (const d of nShadow.querySelectorAll('.dot')) d.remove();
+        let fresh = 0;
 
     const sx = window.scrollX;
     const sy = window.scrollY;
@@ -1854,6 +1881,16 @@
       dot.dataset.note = h.id;
       const lead = h.noteFrom === 'translate' ? `${msg('noteFromTranslate', 'Translation')} — ` : '';
       dot.title = lead + (h.note.length > 60 ? `${h.note.slice(0, 60)}…` : h.note);
+
+      if (!pulsed.has(h.id)) {
+        pulsed.add(h.id);
+        dot.classList.add('fresh');
+        // Staggered, so a document with ten notes reads as a sweep down the page
+        // rather than as ten things flashing at once.
+        // Through a custom property: animation-delay set on the element does NOT
+        // reach its pseudo-element, and the animation lives on ::after.
+        dot.style.setProperty('--delay', `${Math.min(fresh++ * 90, 900)}ms`);
+      }
       dot.setAttribute('aria-expanded', String(noteOpenId === h.id));
       // Sits just past the END of the highlight. When a highlight wraps, the last
       // rect is the last visual line, which is where a reader's eye ends up.
