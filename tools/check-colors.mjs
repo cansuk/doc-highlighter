@@ -71,6 +71,34 @@ const rows = Object.entries(colors).map(([name, hex]) => {
   return { renk: name, hex, luminance: lum(hex).toFixed(3), kontrast: `${c.toFixed(2)}:1` };
 });
 
+/*
+ * 3. NOT NOKTASI KENDI HIGHLIGHT'I UZERINDE OKUNMALI. Nokta, ait oldugu markin
+ *    rengini INK'e dogru karistirarak ciziliyor; tam guclu hali zeminine karisip
+ *    kaybolurdu. WCAG 1.4.11 metin disi bir UI bileseni icin 3:1 istiyor.
+ */
+const MIN_DOT = 3.0;
+const mixMatch = source.match(/function inkier\(hex, amount = ([\d.]+)\)/);
+if (!mixMatch) {
+  console.error('content.js icinde inkier bulunamadi — regex bayatlamis olabilir');
+  process.exit(1);
+}
+const MIX = Number(mixMatch[1]);
+
+const inkier = (hex) => {
+  const c = parseInt(hex.slice(1), 16);
+  const t = parseInt(ink.slice(1), 16);
+  const ch = (sh) => Math.round(((c >> sh) & 255) * (1 - MIX) + ((t >> sh) & 255) * MIX);
+  return `#${[16, 8, 0].map((sh) => ch(sh).toString(16).padStart(2, '0')).join('')}`;
+};
+
+const dotRows = Object.entries(colors).map(([name, hex]) => {
+  const dot = inkier(hex);
+  const c = contrast(dot, hex);
+  if (c < MIN_DOT) {
+    problems.push(`nokta ${name}: ${c.toFixed(2)}:1 < ${MIN_DOT} — kendi highlight'i uzerinde kayboluyor`);
+  }
+  return { renk: name, highlight: hex, nokta: dot, kontrast: `${c.toFixed(2)}:1` };
+});
 const names = Object.keys(colors);
 let closest = { gap: Infinity, pair: '' };
 for (let i = 0; i < names.length; i++) {
@@ -86,6 +114,9 @@ for (let i = 0; i < names.length; i++) {
 console.log(`ink: ${ink}  |  renk: ${names.length}  |  kaynak: PALETTE (CSS bundan uretiliyor)`);
 console.table(rows);
 console.log(`en yakin cift: ${closest.pair} — luminance farki ${closest.gap.toFixed(3)}`);
+
+console.log(`\nnot noktasi (karisim ${MIX}, kendi highlight'i uzerinde):`);
+console.table(dotRows);
 
 if (problems.length) {
   console.error(`\n${problems.length} SORUN:`);

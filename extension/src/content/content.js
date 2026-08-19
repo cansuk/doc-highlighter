@@ -97,6 +97,24 @@
   const PALETTE_KEY = 'dhPalette';
   let custom = {};
   const swatch = (name) => custom[name] || PALETTE[name];
+  /**
+   * Mixes a palette colour towards the ink. The dot sits ON the highlight it
+   * belongs to, so the colour at full strength would vanish into it; this keeps the
+   * hue — which is what says WHICH mark this is — and drops the lightness until it
+   * reads against it.
+   *
+   * 0.70 is measured, not chosen: the lowest mix that clears WCAG 1.4.11 (3:1 for a
+   * non-text UI component) across the whole palette, landing at 3.86:1. Past about
+   * 0.75 the hue washes out and the dot stops identifying anything.
+   * tools/check-colors.mjs enforces the floor.
+   */
+  function inkier(hex, amount = 0.7) {
+    if (!/^#[0-9a-f]{6}$/i.test(hex ?? '')) return null;
+    const c = parseInt(hex.slice(1), 16);
+    const t = parseInt(INK.slice(1), 16);
+    const ch = (sh) => Math.round(((c >> sh) & 255) * (1 - amount) + ((t >> sh) & 255) * amount);
+    return `#${[16, 8, 0].map((sh) => ch(sh).toString(16).padStart(2, '0')).join('')}`;
+  }
 
   const PALETTE = {
     yellow: '#ffd54a',
@@ -1593,7 +1611,7 @@
         chip.className = h.color
           ? 'chip'
           : `chip note-chip ${h.noteFrom === 'translate' ? 'from-tr' : 'from-me'}`;
-        if (h.color) chip.style.background = PALETTE[h.color] ?? PALETTE.yellow;
+        if (h.color) chip.style.background = swatch(h.color);
         chip.title = h.noteFrom === 'translate' ? msg('noteFromTranslate', 'Translation') : msg('noteFromMe', 'Your note');
         b.appendChild(chip);
 
@@ -1640,9 +1658,19 @@
         b.title = msg('pnlOrphan', 'This text is not on the page right now.');
       }
 
+      // The same three cases the page draws, in the same order, so the panel and the
+      // document never disagree about what a mark is. A colourless mark carrying a
+      // note used to fall through to the UNDERLINE chip and show up red.
       const chip = document.createElement('span');
-      chip.className = h.color ? 'chip' : 'chip u';
-      if (h.color) chip.style.background = PALETTE[h.color] ?? '#ffd54a';
+      if (h.color) {
+        chip.className = 'chip';
+        chip.style.background = swatch(h.color);
+      } else if (h.note) {
+        chip.className = `chip note-chip ${h.noteFrom === 'translate' ? 'from-tr' : 'from-me'}`;
+        chip.title = h.noteFrom === 'translate' ? msg('noteFromTranslate', 'Translation') : msg('noteFromMe', 'Your note');
+      } else {
+        chip.className = 'chip u';
+      }
       b.appendChild(chip);
 
       const t = document.createElement('span');
@@ -1873,11 +1901,17 @@
       if (!last) continue;
 
       const dot = document.createElement('button');
-      // Two cues, not one: a translation is a blue circle, a note you wrote is an
-      // amber square with a folded corner. Colour alone would be a cool-vs-cool pair,
-      // which is the first thing colour vision deficiency takes away.
+      // Colour says WHICH mark this is, shape says where the note came from. The two
+      // cues are independent, so neither has to carry the other's job — and shape
+      // survives colour vision deficiency, which colour alone would not.
       const kind = h.noteFrom === 'translate' ? 'from-tr' : 'from-me';
       dot.className = `dot ${kind}`;
+      // Drawn on top of its own highlight, so full strength would disappear into it.
+      const own = inkier(swatch(h.color));
+      if (own) {
+        dot.style.setProperty('--c', own);
+        dot.style.setProperty('--c-on', inkier(swatch(h.color), 0.82));
+      }
       dot.dataset.note = h.id;
       const lead = h.noteFrom === 'translate' ? `${msg('noteFromTranslate', 'Translation')} — ` : '';
       dot.title = lead + (h.note.length > 60 ? `${h.note.slice(0, 60)}…` : h.note);
