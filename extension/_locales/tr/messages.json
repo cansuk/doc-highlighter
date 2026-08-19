@@ -204,7 +204,7 @@
     "message": "Mor"
   },
   "tbClearAll": {
-    "message": "Bu sayfadaki tüm highlight'ları temizle"
+    "message": "Bu sayfadaki tüm highlightları sil"
   },
   "tbClearAllArmed": {
     "message": "{n} tanesini sil?"
@@ -373,5 +373,23 @@
   },
   "qmPulseWhy": {
     "message": "Küçük bir işareti bulunabilir kılmak için kısa tek bir nabız; WCAG flaş eşiğinin altında. Hiçbir şeyin oynamasını istemiyorsan kapat. Sistemdeki hareket azaltma ayarı her hâlükârda dikkate alınır."
+  },
+  "qmRecent": {
+    "message": "Son"
+  },
+  "qmRecentHint": {
+    "message": "İşaretlediklerin, en yenisi üstte. Yeniden açmak için bir yere tıkla."
+  },
+  "qmNoRecent": {
+    "message": "Henüz hiçbir şey işaretlenmedi."
+  },
+  "qmEmbedded": {
+    "message": "Gömülü çerçeve"
+  },
+  "qmMore": {
+    "message": "+{n} tane daha"
+  },
+  "tbEraseSelection": {
+    "message": "Seçimdeki highlightları sil"
   }
 }

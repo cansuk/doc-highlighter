@@ -816,6 +816,8 @@
    * would be wrong because the width varies with theme and language.
    */
   function showToolbar(rect) {
+  // The eraser does two different things; the label has to say which one is armed.
+    labelEraser();
   // Prepared here, off the click. See the note on detectedSource.
     prepareSource();
     host.style.display = 'block';
@@ -849,6 +851,15 @@
       () => {},
     );
   }
+  /** Keeps the eraser's tooltip honest about what pressing it would do. */
+  function labelEraser() {
+    const btn = shadow?.querySelector('[data-act="clear-all"]');
+    if (!btn || clearArmed) return;
+    const scoped = !!(pendingRange || hoveredId);
+    btn.title = scoped
+      ? msg('tbEraseSelection', 'Erase highlights in the selection')
+      : msg('tbClearAll', 'Erase all highlights on this page');
+  }
   function hideToolbar() {
   shadow?.querySelector('.langs')?.remove();
     if (host) host.style.display = 'none';
@@ -874,7 +885,8 @@
     if (btn) {
       btn.classList.remove('armed');
       btn.innerHTML = ERASER;
-      btn.title = msg('tbClearAll', 'Clear all highlights on this page');
+      btn.title = msg('tbClearAll', 'Erase all highlights on this page');
+          labelEraser();
     }
   }
 
@@ -894,6 +906,17 @@
     if (!btn) return;
 
     if (btn.dataset.act === 'clear-all') {
+      // With something selected the eraser is scoped to it, which is what a reader
+      // who just dragged over a passage means by "erase". Only an empty selection
+      // reaches the page-wide branch, and only that one asks twice.
+      const scope = pendingRange ?? (hoveredId ? live.get(hoveredId)?.range : null);
+      if (scope) {
+        await clearRange(scope);
+        hideToolbar();
+        getSelection()?.removeAllRanges();
+        return;
+      }
+
       if (!clearArmed) {
         if (state.highlights.length === 0) return; // nothing to delete
         armClear(state.highlights.length);
@@ -973,6 +996,18 @@
    * a second time the boundaries never match exactly (leading/trailing whitespace,
    * double-click word selection). 75% overlap is enough to count as "the same spot".
    */
+  /**
+   * Every mark the range touches. findOverlapping answers "is this the same
+   * selection again?" and wants one confident hit; this answers "what is inside
+   * what I just dragged over?" and wants all of them, however partially they land.
+   */
+  function findAllOverlapping(start, end) {
+    const hit = [];
+    for (const [id, h] of live) {
+      if (Math.min(end, h.end) - Math.max(start, h.start) > 0) hit.push(id);
+    }
+    return hit;
+  }
   function findOverlapping(start, end) {
     for (const [id, h] of live) {
       const overlap = Math.min(end, h.end) - Math.max(start, h.start);
@@ -1061,6 +1096,25 @@
    * page both the doc: and hash: keys go; in a frame only the doc:# key (a frame
    * never writes a URL index — see FRAME NOTE).
    */
+  /**
+   * Removes every mark the selection touches. No confirmation: the scope is
+   * visible on screen and the reader chose it themselves, which is the opposite of
+   * the page-wide case.
+   */
+  async function clearRange(range) {
+    const index = buildIndex();
+    const off = rangeToOffsets(index, range);
+    if (!off) return 0;
+
+    const ids = new Set(findAllOverlapping(off.start, off.end));
+    if (!ids.size) return 0;
+
+    state.highlights = state.highlights.filter((h) => !ids.has(h.id));
+    await save();
+    applyAll(index);
+    log(`${TAG} secimdeki ${ids.size} highlight kaldirildi`);
+    return ids.size;
+  }
   async function clearPage() {
     const n = state.highlights.length;
     state.highlights = [];
@@ -2868,6 +2922,8 @@
         hasTranslator,
         langName,
         QUICK_LANGS,
+        clearRange,
+        findAllOverlapping,
         runCommand,
         renderMarkdown,
         mdInline,

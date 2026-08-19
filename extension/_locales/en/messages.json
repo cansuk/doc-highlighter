@@ -204,7 +204,7 @@
     "message": "Purple"
   },
   "tbClearAll": {
-    "message": "Clear all highlights on this page"
+    "message": "Erase all highlights on this page"
   },
   "tbClearAllArmed": {
     "message": "Delete all {n}?"
@@ -373,5 +373,23 @@
   },
   "qmPulseWhy": {
     "message": "One short pulse, under the WCAG flash threshold, to make a small mark findable. Turn it off if you would rather nothing moved. Reduced-motion settings are honoured either way."
+  },
+  "qmRecent": {
+    "message": "Recent"
+  },
+  "qmRecentHint": {
+    "message": "What you marked, newest first. Click a place to open it again."
+  },
+  "qmNoRecent": {
+    "message": "Nothing marked yet."
+  },
+  "qmEmbedded": {
+    "message": "Embedded frame"
+  },
+  "qmMore": {
+    "message": "+{n} more"
+  },
+  "tbEraseSelection": {
+    "message": "Erase highlights in the selection"
   }
 }

@@ -360,3 +360,155 @@ pulseBox.addEventListener('change', async () => {
   const current = (await chrome.storage.local.get(PREFS_KEY))[PREFS_KEY] ?? {};
   await chrome.storage.local.set({ [PREFS_KEY]: { ...current, pulse: pulseBox.checked } });
 });
+
+/* --- recent -----------------------------------------------------------------
+ * What you marked, most recent first, grouped by where you marked it.
+ *
+ * The records are already keyed by document, so this reads them rather than
+ * keeping a second list — nothing new is stored, and nothing can fall out of
+ * step with what the pages actually hold.
+ *
+ * Times come from Intl.RelativeTimeFormat and places from the URL, so no
+ * sentence here needed translating into either locale.
+ * ------------------------------------------------------------------------- */
+
+const DOCS_SHOWN = 8;
+const MARKS_PER_DOC = 3;
+
+const recentBox = document.getElementById('recent');
+
+const uiLang = (() => {
+  try {
+    return chrome.i18n.getUILanguage();
+  } catch {
+    return undefined;
+  }
+})();
+
+const rtf = (() => {
+  try {
+    return new Intl.RelativeTimeFormat(uiLang, { numeric: 'auto' });
+  } catch {
+    return null;
+  }
+})();
+
+const UNITS = [
+  ['year', 31536000],
+  ['month', 2592000],
+  ['week', 604800],
+  ['day', 86400],
+  ['hour', 3600],
+  ['minute', 60],
+];
+
+function ago(ts) {
+  if (!ts || !rtf) return '';
+  const secs = (ts - Date.now()) / 1000;
+  for (const [unit, size] of UNITS) {
+    if (Math.abs(secs) >= size) return rtf.format(Math.round(secs / size), unit);
+  }
+  return rtf.format(Math.round(secs), 'second');
+}
+
+/** A place a reader recognises: the site, or the file they opened. */
+function placeOf(rec, key) {
+  if (!rec?.url) return rec?.title || t('qmEmbedded');
+  try {
+    const u = new URL(rec.url);
+    if (u.protocol === 'file:') return decodeURIComponent(u.pathname.split('/').pop()) || u.pathname;
+    return u.host.replace(/^www\./, '');
+  } catch {
+    return rec.url || key;
+  }
+}
+
+async function drawRecent() {
+  const all = await chrome.storage.local.get(null);
+
+  const docs = Object.entries(all)
+    .filter(([k, v]) => k.startsWith('doc:') && Array.isArray(v?.highlights) && v.highlights.length)
+    .map(([key, rec]) => ({ key, rec }))
+    .sort((a, b) => (b.rec.updatedAt ?? 0) - (a.rec.updatedAt ?? 0))
+    .slice(0, DOCS_SHOWN);
+
+  recentBox.textContent = '';
+
+  if (!docs.length) {
+    const p = document.createElement('p');
+    p.className = 'none';
+    p.textContent = t('qmNoRecent');
+    recentBox.appendChild(p);
+    return;
+  }
+
+  for (const { key, rec } of docs) {
+    const wrap = document.createElement('div');
+    wrap.className = 'doc';
+
+    const head = document.createElement('a');
+    head.href = rec.url ?? '#';
+    head.title = rec.title || rec.url || '';
+    if (rec.url) {
+      head.addEventListener('click', (e) => {
+        e.preventDefault();
+        chrome.tabs.create({ url: rec.url });
+      });
+    }
+
+    const where = document.createElement('span');
+    where.className = 'where';
+    where.textContent = placeOf(rec, key);
+
+    const when = document.createElement('span');
+    when.className = 'when';
+    when.textContent = ago(rec.updatedAt);
+    when.title = rec.updatedAt ? new Date(rec.updatedAt).toLocaleString(uiLang) : '';
+
+    head.append(where, when);
+    wrap.appendChild(head);
+
+    // Newest first inside the document too: the reason you opened this list is
+    // almost always the thing you did last.
+    const marks = [...rec.highlights].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+
+    const list = document.createElement('ul');
+    for (const h of marks.slice(0, MARKS_PER_DOC)) {
+      const li = document.createElement('li');
+
+      const sw = document.createElement('span');
+      if (h.color) {
+        sw.className = 'sw';
+        sw.style.background = colourOf(h.color);
+      } else if (h.note) {
+        sw.className = 'sw';
+        sw.style.background = h.noteFrom === 'translate' ? '#2563eb' : '#d97706';
+        sw.style.borderRadius = h.noteFrom === 'translate' ? '50%' : '2px';
+      } else {
+        sw.className = 'sw rule';
+        sw.style.color = colourOf('underline');
+      }
+
+      const ex = document.createElement('span');
+      ex.className = 'ex';
+      const quote = (h.anchor?.exact ?? '').replace(/\s+/g, ' ').trim();
+      ex.textContent = h.note ? `${h.note.replace(/\s+/g, ' ').trim()}` : quote;
+      ex.title = quote;
+
+      li.append(sw, ex);
+      list.appendChild(li);
+    }
+    wrap.appendChild(list);
+
+    if (marks.length > MARKS_PER_DOC) {
+      const more = document.createElement('div');
+      more.className = 'more';
+      more.textContent = t('qmMore').replace('{n}', String(marks.length - MARKS_PER_DOC));
+      wrap.appendChild(more);
+    }
+
+    recentBox.appendChild(wrap);
+  }
+}
+
+drawRecent();

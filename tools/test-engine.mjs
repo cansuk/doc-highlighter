@@ -1058,6 +1058,66 @@ const MD_DOC = [
   });
 }
 
+
+// --- silgi kapsami ----------------------------------------------------------
+// Silgi iki farkli sey yapiyor ve hangisini yaptigini SECIM belirliyor. Bu ayrim
+// veri tarafinda test ediliyor; tooltip metni goruntudur, davranis budur.
+
+{
+  const { window, api } = await boot();
+  const doc = window.document;
+  const p = doc.getElementById('p1');
+  const range = (a, b) => {
+    const r = doc.createRange();
+    r.setStart(p.firstChild, a);
+    r.setEnd(p.firstChild, b);
+    return r;
+  };
+
+  await api.applyToSelection(range(0, 10), { color: 'yellow' });
+  await api.applyToSelection(range(12, 22), { color: 'green' });
+  await api.applyToSelection(range(30, 40), { color: 'pink' });
+
+  check('uc mark olusturuldu', () => {
+    eq(api.state.highlights.length, 3, 'baslangic');
+  });
+
+  check('findAllOverlapping kismi ortusmeyi de yakalar', () => {
+    // findOverlapping "bu ayni secim mi" diye sorar ve %75 ister; bu ise
+    // "surukledigim alanin icinde ne var" diye sorar, kismi olan da sayilir.
+    const idx = api.buildIndex();
+    const off = api.rangeToOffsets(idx, range(5, 35));
+    const ids = api.findAllOverlapping(off.start, off.end);
+    eq(ids.length, 3, 'ucune de dokunuyor');
+  });
+
+  const removed = await api.clearRange(range(0, 25));
+
+  check('secimdeki marklar silinir', () => {
+    eq(removed, 2, 'iki mark kaldirildi');
+    eq(api.state.highlights.length, 1, 'biri kaldi');
+    eq(api.state.highlights[0].color, 'pink', 'kalan dogru olan');
+  });
+
+  check('secim disindaki mark KORUNUR', () => {
+    // Sayfa geneli temizlik ile kapsamli silmenin farki tam olarak bu.
+    truthy(api.state.highlights.some((h) => h.color === 'pink'), 'pink duruyor');
+  });
+
+  const none = await api.clearRange(range(50, 55));
+
+  check('bos alanda silgi hicbir seyi silmez', () => {
+    eq(none, 0, 'kaldirilan yok');
+    eq(api.state.highlights.length, 1, 'sayi degismedi');
+  });
+
+  await api.clearPage();
+
+  check('sayfa geneli temizlik hepsini alir', () => {
+    eq(api.state.highlights.length, 0, 'bos');
+  });
+}
+
 // --- sonuc ------------------------------------------------------------------
 
 console.log(`\n${pass} gecti, ${failures.length} kaldi\n`);

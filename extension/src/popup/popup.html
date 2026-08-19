@@ -87,6 +87,27 @@
   .host { font: 12px/1.4 ui-monospace, Consolas, monospace; word-break: break-all; margin: 0 0 3px; }
   .note { font-size: 12px; color: var(--muted); margin: 0; }
 
+  /* --- recent ------------------------------------------------------------- */
+  .doc { margin-bottom: 12px; }
+  .doc > a {
+    display: flex; align-items: baseline; gap: 8px; text-decoration: none;
+    color: var(--ink); padding: 4px 6px; border-radius: 7px;
+  }
+  .doc > a:hover { background: var(--hi); }
+  .doc .where {
+    font-weight: 650; font-size: 12.5px; flex: 1; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .doc .when { font-size: 11px; color: var(--muted); flex: none; }
+  .doc ul { list-style: none; margin: 2px 0 0; padding: 0 0 0 6px; }
+  .doc li { display: flex; gap: 7px; align-items: flex-start; padding: 3px 0; font-size: 12px; }
+  .doc li .sw { width: 9px; height: 9px; border-radius: 2px; margin-top: 4px; flex: none; }
+  .doc li .sw.rule { background: repeating-linear-gradient(180deg, transparent 0 5px, currentColor 5px 7px); }
+  .doc li .ex { color: var(--muted); overflow: hidden; display: -webkit-box;
+                -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .doc .more { font-size: 11px; color: var(--muted); padding: 2px 0 0 6px; }
+  .none { color: var(--muted); font-size: 12.5px; padding: 18px 4px; text-align: center; }
+
   /* --- colours ------------------------------------------------------------ */
   .strokes { display: flex; flex-direction: column; gap: 2px; }
   /* A label, not a button: it forwards a click to the input it wraps, which is
@@ -162,7 +183,8 @@
 </div>
 
 <nav class="tabs" role="tablist">
-  <button class="tab" data-tab="access"  role="tab" aria-selected="true"><span data-i18n="qmAccess"></span></button>
+  <button class="tab" data-tab="recent"  role="tab" aria-selected="true"><span data-i18n="qmRecent"></span></button>
+  <button class="tab" data-tab="access"  role="tab" aria-selected="false"><span data-i18n="qmAccess"></span></button>
   <button class="tab" data-tab="colours" role="tab" aria-selected="false"><span data-i18n="qmColours"></span></button>
   <button class="tab" data-tab="addons"  role="tab" aria-selected="false"><span data-i18n="qmAddons"></span></button>
   <button class="tab" data-tab="about"   role="tab" aria-selected="false"><span data-i18n="qmAbout"></span></button>
@@ -171,7 +193,7 @@
 <main>
 
   <!-- ACCESS --------------------------------------------------------------- -->
-  <section data-panel="access">
+  <section data-panel="access" hidden>
     <div class="state" id="file-state" data-on="?">
       <span class="pip" aria-hidden="true"></span>
       <strong id="file-title" data-i18n="popupChecking"></strong>
@@ -193,6 +215,12 @@
       <p class="note" id="all-state"></p>
       <button class="btn quiet" id="all-toggle" type="button"></button>
     </div>
+  </section>
+
+  <!-- RECENT ---------------------------------------------------------------- -->
+  <section data-panel="recent">
+    <p class="hint" data-i18n="qmRecentHint"></p>
+    <div id="recent"></div>
   </section>
 
   <!-- COLOURS -------------------------------------------------------------- -->
