@@ -1005,6 +1005,59 @@ const MD_DOC = [
   });
 }
 
+
+// --- nabiz ayari ------------------------------------------------------------
+// Hareket kapatilabilir olmali. WCAG 2.2.2, bes saniyeden uzun hareket icin
+// durdurma yolu istiyor; sure zaten esigin altina cekildi ama "kapatabilmek"
+// sadece sureyle ilgili degil.
+
+{
+  const { api } = await boot();
+
+  check('nabiz varsayilan olarak ACIK', () => {
+    // Kucuk bir isareti bulunabilir kilan sey bu; kapali gelseydi ozellik
+    // kimsenin fark etmedigi bir seye donerdi.
+    eq(api.prefs.pulse, true, 'prefs.pulse');
+  });
+
+  check('nabiz kapaliyken nokta cizimi PATLAMAZ', () => {
+    api.prefs.pulse = false;
+    let threw = null;
+    try {
+      api.renderNoteDots();
+    } catch (e) {
+      threw = e;
+    }
+    eq(threw, null, 'istisna yok');
+    api.prefs.pulse = true;
+  });
+}
+
+{
+  // Animasyon suresi kaynakta olculur, yorumda iddia edilmez.
+  const src = await readFile(SRC, 'utf8');
+
+  check('hareket suresi WCAG 2.2.2 esiginin ALTINDA', () => {
+    const dur = src.match(/animation: dh-dot-pulse ([\d.]+)s [a-z-]+ (\d+)/);
+    const cap = src.match(/Math\.min\(fresh\+\+ \* \d+, (\d+)\)/);
+    truthy(dur, 'animasyon tanimi bulundu');
+    truthy(cap, 'gecikme siniri bulundu');
+
+    const total = Number(dur[1]) * Number(dur[2]) + Number(cap[1]) / 1000;
+    truthy(total < 5, 'toplam hareket ' + total.toFixed(1) + 's, 5s altinda olmali');
+  });
+
+  check('flas frekansi nobet esiginin ALTINDA', () => {
+    const dur = Number(src.match(/animation: dh-dot-pulse ([\d.]+)s/)[1]);
+    const hz = 1 / dur;
+    truthy(hz < 3, 'frekans ' + hz.toFixed(2) + ' Hz, 3 Hz altinda olmali');
+  });
+
+  check('hareket azaltma ayari dikkate alinir', () => {
+    truthy(src.includes('prefers-reduced-motion'), 'medya sorgusu var');
+  });
+}
+
 // --- sonuc ------------------------------------------------------------------
 
 console.log(`\n${pass} gecti, ${failures.length} kaldi\n`);

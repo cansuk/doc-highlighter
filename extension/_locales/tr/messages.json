@@ -367,5 +367,11 @@
   },
   "noteFromMe": {
     "message": "Kendi notun"
+  },
+  "qmPulse": {
+    "message": "Not işareti ilk göründüğünde nabız atsın"
+  },
+  "qmPulseWhy": {
+    "message": "Küçük bir işareti bulunabilir kılmak için kısa tek bir nabız; WCAG flaş eşiğinin altında. Hiçbir şeyin oynamasını istemiyorsan kapat. Sistemdeki hareket azaltma ayarı her hâlükârda dikkate alınır."
   }
 }

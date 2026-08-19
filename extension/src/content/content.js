@@ -1084,7 +1084,7 @@
   // per tab is the only sensible reading.
 
   const PREFS_KEY = 'dhPanelPrefs';
-  const prefs = { side: 'right', theme: 'auto', open: true, preview: true };
+  const prefs = { side: 'right', theme: 'auto', open: true, preview: true, pulse: true };
 
   // Widths live here, not only in CSS: the page needs the same numbers to reserve
   // room for the panel, and two hand-kept copies would drift apart.
@@ -1882,14 +1882,16 @@
       const lead = h.noteFrom === 'translate' ? `${msg('noteFromTranslate', 'Translation')} — ` : '';
       dot.title = lead + (h.note.length > 60 ? `${h.note.slice(0, 60)}…` : h.note);
 
-      if (!pulsed.has(h.id)) {
+      if (prefs.pulse && !pulsed.has(h.id)) {
         pulsed.add(h.id);
         dot.classList.add('fresh');
         // Staggered, so a document with ten notes reads as a sweep down the page
-        // rather than as ten things flashing at once.
+        // rather than as ten things flashing at once. Capped at 400ms because the
+        // animation itself runs 4.5s, and WCAG 2.2.2 asks for a way to stop motion
+        // that lasts longer than five seconds — 4.5 + 0.4 stays under it.
         // Through a custom property: animation-delay set on the element does NOT
         // reach its pseudo-element, and the animation lives on ::after.
-        dot.style.setProperty('--delay', `${Math.min(fresh++ * 90, 900)}ms`);
+        dot.style.setProperty('--delay', `${Math.min(fresh++ * 80, 400)}ms`);
       }
       dot.setAttribute('aria-expanded', String(noteOpenId === h.id));
       // Sits just past the END of the highlight. When a highlight wraps, the last
@@ -2784,6 +2786,15 @@
         if (changes[TR_KEY]) {
           Object.assign(trPrefs, changes[TR_KEY].newValue ?? {});
           refreshLangButton();
+        }
+        if (changes[PREFS_KEY]) {
+          Object.assign(prefs, changes[PREFS_KEY].newValue ?? {});
+          syncPanelChrome();
+          renderPanelSafe();
+          // Already-pulsed ids are forgotten, so turning the setting back on shows the
+          // marks once rather than leaving the page looking as if nothing happened.
+          if (prefs.pulse) pulsed.clear();
+          renderNoteDots();
         }
       });
 

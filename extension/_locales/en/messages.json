@@ -367,5 +367,11 @@
   },
   "noteFromMe": {
     "message": "Your note"
+  },
+  "qmPulse": {
+    "message": "Pulse a note mark when it first appears"
+  },
+  "qmPulseWhy": {
+    "message": "One short pulse, under the WCAG flash threshold, to make a small mark findable. Turn it off if you would rather nothing moved. Reduced-motion settings are honoured either way."
   }
 }

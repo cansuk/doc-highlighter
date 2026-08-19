@@ -337,3 +337,26 @@ if (!translatorHere) {
     await chrome.storage.local.set({ [TR_KEY]: { ...trPrefs } });
   });
 }
+
+/* --- motion -----------------------------------------------------------------
+ * A note dot pulses once when it first appears, which is what makes a small mark
+ * findable in a page of text. It is under the WCAG flash threshold — one cycle
+ * per 1.5s on a small low-contrast ring, against a limit of three per second —
+ * but motion is not only a seizure question, and nobody should have to justify
+ * wanting it gone.
+ *
+ * prefers-reduced-motion is already honoured without this switch. The switch is
+ * for everyone who never set that flag.
+ * ------------------------------------------------------------------------- */
+
+const PREFS_KEY = 'dhPanelPrefs';
+const panelPrefs = (await chrome.storage.local.get(PREFS_KEY))[PREFS_KEY] ?? {};
+
+const pulseBox = document.getElementById('pulse');
+pulseBox.checked = panelPrefs.pulse !== false;
+
+pulseBox.addEventListener('change', async () => {
+  // Merged, not replaced: this key also holds the panel side, theme and preview.
+  const current = (await chrome.storage.local.get(PREFS_KEY))[PREFS_KEY] ?? {};
+  await chrome.storage.local.set({ [PREFS_KEY]: { ...current, pulse: pulseBox.checked } });
+});
