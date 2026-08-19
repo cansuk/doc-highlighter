@@ -391,5 +391,8 @@
   },
   "tbEraseSelection": {
     "message": "Erase highlights in the selection"
+  },
+  "qmPanelFailed": {
+    "message": "This section could not load"
   }
 }

@@ -391,5 +391,8 @@
   },
   "tbEraseSelection": {
     "message": "Seçimdeki highlightları sil"
+  },
+  "qmPanelFailed": {
+    "message": "Bu bölüm yüklenemedi"
   }
 }
