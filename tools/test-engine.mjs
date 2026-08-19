@@ -932,6 +932,79 @@ const MD_DOC = [
   });
 }
 
+
+// --- notun kaynagi ----------------------------------------------------------
+// Bir not ya okuyanin kendi yazdigi seydir ya da cevirinin ciktisi. Ikisi ayni
+// listede duruyor, o yuzden kaynak VERIDE tutuluyor; gosterim (renk ve bicim)
+// bunun uzerine kuruluyor.
+
+{
+  const { window, api } = await boot();
+  const doc = window.document;
+  const mk = (from, to, patch) => {
+    const p = doc.getElementById('p1');
+    const r = doc.createRange();
+    r.setStart(p.firstChild, from);
+    r.setEnd(p.firstChild, to);
+    return api.applyToSelection(r, patch);
+  };
+
+  const mine = await mk(0, 10, { note: 'kendi notum' });
+  const trans = await mk(15, 25, { note: 'my own note', noteFrom: 'translate' });
+
+  check('ceviriden gelen not kaynagini tasir', () => {
+    const h = api.state.highlights.find((x) => x.id === trans);
+    eq(h.noteFrom, 'translate', 'noteFrom');
+  });
+
+  check('elle yazilan notta kaynak alani BULUNMAZ', () => {
+    // undefined, "manual" degil: varsayilan durum icin alan tasimamak, eski
+    // kayitlarin da dogru tarafa dusmesini saglar.
+    const h = api.state.highlights.find((x) => x.id === mine);
+    eq(h.noteFrom, undefined, 'noteFrom');
+  });
+
+
+  await api.patchHighlight(trans, { note: '' });
+
+  check('not silinince kaynak alani da temizlenir', () => {
+    // Kayit renk/underline tasimadigi icin tamamen kaldirilmis olmali; kalsaydi
+    // bile ustunde bayat bir noteFrom tasimamali.
+    const h = api.state.highlights.find((x) => x.id === trans);
+    eq(h, undefined, 'kayit kaldirildi');
+  });
+
+  const kept = await mk(30, 40, { color: 'yellow', note: 'x', noteFrom: 'translate' });
+  await api.patchHighlight(kept, { note: '' });
+
+  check('renkli markta not silinince kaynak da silinir, mark kalir', () => {
+    const h = api.state.highlights.find((x) => x.id === kept);
+    truthy(h, 'mark duruyor');
+    eq(h.color, 'yellow', 'rengi korundu');
+    eq(h.note, undefined, 'not gitti');
+    eq(h.noteFrom, undefined, 'kaynak da gitti');
+  });
+
+}
+
+{
+  const { window, api } = await boot();
+  const doc = window.document;
+  const p = doc.getElementById('p1');
+  const r = doc.createRange();
+  r.setStart(p.firstChild, 0);
+  r.setEnd(p.firstChild, 12);
+  await api.applyToSelection(r, { note: 'ceviri', noteFrom: 'translate' });
+
+  const saved = await window.chrome.storage.local.get(null);
+  const rec = Object.entries(saved).find(([k]) => k.startsWith('doc:'))?.[1];
+
+  check('kaynak bilgisi diske yazilir', () => {
+    truthy(rec, 'doc kaydi var');
+    eq(rec.highlights[0].noteFrom, 'translate', 'diskteki noteFrom');
+  });
+}
+
 // --- sonuc ------------------------------------------------------------------
 
 console.log(`\n${pass} gecti, ${failures.length} kaldi\n`);

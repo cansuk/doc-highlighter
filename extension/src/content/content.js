@@ -982,7 +982,12 @@
     if (patch.color) h.color = h.color === patch.color ? null : patch.color;
     if (patch.underline) h.underline = !h.underline;
     // A note is SET, not toggled: an empty string means "remove the note".
-    if (patch.note !== undefined) h.note = patch.note.trim() || undefined;
+    if (patch.note !== undefined) {
+      h.note = patch.note.trim() || undefined;
+      // Where it came from travels with it, and goes when it goes.
+      if (!h.note) delete h.noteFrom;
+      else if (patch.noteFrom) h.noteFrom = patch.noteFrom;
+    }
 
     if (!h.color && !h.underline && !h.note) {
       state.highlights = state.highlights.filter((x) => x.id !== id);
@@ -1013,6 +1018,7 @@
       color: patch.color ?? null,
       underline: !!patch.underline,
       note: patch.note?.trim() || undefined,
+            noteFrom: patch.note?.trim() ? patch.noteFrom : undefined,
       anchor: makeAnchor(index, off.start, off.end),
       createdAt: Date.now(),
     };
@@ -1366,15 +1372,18 @@
 
     .note {
       display: block; margin-top: 3px; padding-left: 6px;
-      border-left: 2px solid #2563eb; color: var(--muted); font-size: 12px;
+      border-left: 2px solid #d97706; color: var(--muted); font-size: 12px;
       overflow-wrap: anywhere;
     }
+    .note.from-tr { border-left-color: #2563eb; }
 
     .when {
       display: block; margin-top: 3px; color: var(--muted);
       font-size: 10px; letter-spacing: .02em; font-variant-numeric: tabular-nums;
     }
-    .note-chip { background: #2563eb; border-color: transparent; }
+    .note-chip { border-color: transparent; }
+    .note-chip.from-me { background: #d97706; border-radius: 3px 3px 3px 1px; }
+    .note-chip.from-tr { background: #2563eb; border-radius: 50%; }
     .note-lead { display: block; }
     .note-quote {
       display: block; margin-top: 3px; padding-left: 6px;
@@ -1581,8 +1590,11 @@
         }
 
         const chip = document.createElement('span');
-        chip.className = h.color ? 'chip' : 'chip note-chip';
+        chip.className = h.color
+          ? 'chip'
+          : `chip note-chip ${h.noteFrom === 'translate' ? 'from-tr' : 'from-me'}`;
         if (h.color) chip.style.background = PALETTE[h.color] ?? PALETTE.yellow;
+        chip.title = h.noteFrom === 'translate' ? msg('noteFromTranslate', 'Translation') : msg('noteFromMe', 'Your note');
         b.appendChild(chip);
 
         const t = document.createElement('span');
@@ -1643,12 +1655,15 @@
       // their head to answer one question.
       if (h.note) {
         const n = document.createElement('span');
-        n.className = 'note';
+        n.className = `note ${h.noteFrom === 'translate' ? 'from-tr' : 'from-me'}`;
         n.textContent = h.note.replace(/\s+/g, ' ').trim();
-        const whenMark = stamp(h.createdAt);
-        if (whenMark) t.appendChild(whenMark);
         t.appendChild(n);
       }
+
+      // Outside the branch above: every mark has a creation time, not only the ones
+      // carrying a note.
+      const whenMark = stamp(h.createdAt);
+      if (whenMark) t.appendChild(whenMark);
 
       b.appendChild(t);
       return b;
@@ -1734,11 +1749,15 @@
        by colour and size instead of by an outline. */
     .dot {
       position: absolute; width: 12px; height: 12px; padding: 0; border: 0;
-      border-radius: 50% 50% 50% 2px;
-      background: #2563eb; cursor: pointer; pointer-events: auto;
+      cursor: pointer; pointer-events: auto;
     }
-    .dot:hover { background: #1d4ed8; transform: scale(1.2); }
-    .dot[aria-expanded="true"] { background: #1d4ed8; transform: scale(1.2); }
+    /* Written by the reader: the folded corner of a sticky note, in amber. */
+    .dot.from-me { background: #d97706; border-radius: 50% 50% 50% 2px; }
+    .dot.from-me:hover, .dot.from-me[aria-expanded="true"] { background: #b45309; }
+    /* Produced by the translator: round, blue, no corner to fold. */
+    .dot.from-tr { background: #2563eb; border-radius: 50%; }
+    .dot.from-tr:hover, .dot.from-tr[aria-expanded="true"] { background: #1d4ed8; }
+    .dot:hover, .dot[aria-expanded="true"] { transform: scale(1.2); }
     /* Keyboard users still need to see where they are; this is the one case where
        a ring is the point rather than clutter. */
     .dot:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
@@ -1827,9 +1846,14 @@
       if (!last) continue;
 
       const dot = document.createElement('button');
-      dot.className = 'dot';
+      // Two cues, not one: a translation is a blue circle, a note you wrote is an
+      // amber square with a folded corner. Colour alone would be a cool-vs-cool pair,
+      // which is the first thing colour vision deficiency takes away.
+      const kind = h.noteFrom === 'translate' ? 'from-tr' : 'from-me';
+      dot.className = `dot ${kind}`;
       dot.dataset.note = h.id;
-      dot.title = h.note.length > 60 ? `${h.note.slice(0, 60)}…` : h.note;
+      const lead = h.noteFrom === 'translate' ? `${msg('noteFromTranslate', 'Translation')} — ` : '';
+      dot.title = lead + (h.note.length > 60 ? `${h.note.slice(0, 60)}…` : h.note);
       dot.setAttribute('aria-expanded', String(noteOpenId === h.id));
       // Sits just past the END of the highlight. When a highlight wraps, the last
       // rect is the last visual line, which is where a reader's eye ends up.
@@ -1925,11 +1949,16 @@
 
     if (act === 'save') {
       const text = nShadow.querySelector('textarea')?.value.trim() ?? '';
+      // The translate card and the note card share this handler; only the card knows
+      // which one the reader was looking at.
+      const from = nShadow.querySelector('.card')?.dataset.role === 'translate' ? 'translate' : undefined;
       closeNoteCard();
       if (!text) return id ? patchHighlight(id, { note: '' }) : undefined;
       // The mark is born here, carrying the note, so an abandoned card never leaves
       // an invisible record behind.
-      return id ? patchHighlight(id, { note: text }) : applyToSelection(pending, { note: text });
+      return id
+        ? patchHighlight(id, { note: text, noteFrom: from })
+        : applyToSelection(pending, { note: text, noteFrom: from });
     }
   }
 

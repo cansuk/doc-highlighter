@@ -364,5 +364,11 @@
   },
   "qmUnavailable": {
     "message": "Kullanılamıyor"
+  },
+  "noteFromTranslate": {
+    "message": "Çeviri"
+  },
+  "noteFromMe": {
+    "message": "Kendi notun"
   }
 }

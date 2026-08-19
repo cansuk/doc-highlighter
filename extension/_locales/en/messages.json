@@ -364,5 +364,11 @@
   },
   "qmUnavailable": {
     "message": "Unavailable"
+  },
+  "noteFromTranslate": {
+    "message": "Translation"
+  },
+  "noteFromMe": {
+    "message": "Your note"
   }
 }
