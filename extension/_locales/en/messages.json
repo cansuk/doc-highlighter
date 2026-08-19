@@ -344,9 +344,6 @@
   "trUnavailable": {
     "message": "Translation is not available in this browser."
   },
-  "trNoPair": {
-    "message": "This language pair is not available on the device."
-  },
   "trFailed": {
     "message": "Translation failed."
   },

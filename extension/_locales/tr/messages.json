@@ -344,9 +344,6 @@
   "trUnavailable": {
     "message": "Bu tarayıcıda çeviri kullanılamıyor."
   },
-  "trNoPair": {
-    "message": "Bu dil çifti cihazda kullanılamıyor."
-  },
   "trFailed": {
     "message": "Çeviri başarısız."
   },
