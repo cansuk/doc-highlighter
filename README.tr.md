@@ -1,4 +1,4 @@
-# Doc Highlighter — Local HTML & Markdown · v0.15.0
+# Notestark — Local HTML & Markdown · v0.16.0
 
 Lokal `.md` / `.html` dosyalarında ve izin verdiğin web sitelerinde highlight ve
 underline; sekme kapansa da kalıcı.
@@ -130,7 +130,7 @@ metni ve etrafındaki ~32 karakteri arar. Metin tamamen silinmişse bağlanamaz 
 **orphan** denir ve konsola yazılır:
 
 ```
-[Doc Highlighter] N highlight bu sayfada bulunamadı (orphan) — veri silinmedi
+[Notestark] N highlight bu sayfada bulunamadı (orphan) — veri silinmedi
 ```
 
 **Veri silinmez.** Metin geri gelirse highlight da geri gelir.
@@ -178,7 +178,7 @@ tam tersi. O yüzden frame'de content hash birincil.
 
 Her highlight: `{ id, color: "yellow"|null, underline: bool, anchor: { exact, prefix, suffix, start, end } }`
 
-Silmek için: `chrome://extensions` → Doc Highlighter → **Remove** (extension kaldırılınca
+Silmek için: `chrome://extensions` → Notestark → **Remove** (extension kaldırılınca
 tüm veri gider). Tek tek silmek için highlight'a tıklayıp **×**.
 
 ## Bilinmesi gerekenler
@@ -201,7 +201,7 @@ tüm veri gider). Tek tek silmek için highlight'a tıklayıp **×**.
 `chrome://extensions` → **Geliştirici modu** açık → **Paketlenmemiş öğe yükle** →
 
 ```
-C:\Projects\workspace\doc-highlighter\extension
+C:\Projects\workspace\notestark\extension
 ```
 
 ⚠️ Proje kökünü değil, **`extension/` alt klasörünü** seç. Kök dizinde `node_modules`
@@ -223,7 +223,7 @@ reddeder (`_` sistem için rezerve) — bu yüzden tooling extension'ın dışı
 ## 0. Hazırlık
 
 ```bash
-cd C:\Projects\workspace\doc-highlighter
+cd C:\Projects\workspace\notestark
 npm install        # sharp (ilk kez)
 npm run icons      # extension/icons/*.png uretir
 ```
@@ -231,15 +231,15 @@ npm run icons      # extension/icons/*.png uretir
 Icon'lar yoksa Chrome yüklemede hata verir. Test dosyaları hazır:
 
 ```
-C:\Projects\workspace\doc-highlighter\test-pages\sample.html
-C:\Projects\workspace\doc-highlighter\test-pages\sample.md
+C:\Projects\workspace\notestark\test-pages\sample.html
+C:\Projects\workspace\notestark\test-pages\sample.md
 ```
 
 ## 1. Extension'ı yükle
 
 1. `chrome://extensions` aç
 2. Sağ üstte **Geliştirici modu** → açık
-3. **Paketlenmemiş öğe yükle** → `C:\Projects\workspace\doc-highlighter\extension`
+3. **Paketlenmemiş öğe yükle** → `C:\Projects\workspace\notestark\extension`
 
 | ✅ Beklenen | ❌ Sorun |
 |---|---|
@@ -249,7 +249,7 @@ C:\Projects\workspace\doc-highlighter\test-pages\sample.md
 
 ## 2. Extension'ı toolbar'a SABİTLE — bu adım atlanamaz
 
-Toolbar'daki **puzzle parçası** simgesine tıkla → listede **Doc Highlighter** → yanındaki
+Toolbar'daki **puzzle parçası** simgesine tıkla → listede **Notestark** → yanındaki
 **raptiye** ikonuna bas. Artık ikon adres çubuğunun sağında duruyor.
 
 > ### ⚠️ İki ayrı ikon var, karıştırma
@@ -266,7 +266,7 @@ Toolbar'daki **puzzle parçası** simgesine tıkla → listede **Doc Highlighter
 ## 3. İzin KAPALI durumu — ikon ve badge
 
 > **Önce izni KAPAT.** Chrome bu ayarı extension ID başına hatırlar; zaten açıksa gri
-> durumu göremezsin. `chrome://extensions` → Doc Highlighter → **Details** →
+> durumu göremezsin. `chrome://extensions` → Notestark → **Details** →
 > **"Dosya URL'lerine erişime izin ver"** → **kapat**.
 >
 > Doğrula: kart → **service worker** → console →
@@ -308,13 +308,13 @@ Sonra sadece bak:
 Adres çubuğuna yapıştır:
 
 ```
-file:///C:/Projects/workspace/doc-highlighter/test-pages/sample.html
+file:///C:/Projects/workspace/notestark/test-pages/sample.html
 ```
 
 | ✅ Beklenen | Nerede görülür |
 |---|---|
 | Sayfa açılır, stilli görünür | — |
-| Console'da `[Doc Highlighter] content script yüklendi: file:///... (text/html)` | **F12 → Console** |
+| Console'da `[Notestark] content script yüklendi: file:///... (text/html)` | **F12 → Console** |
 | Onboarding sekmesindeki **"Canlı doğrulama"** kutusu yeşile döner, saat + URL yazar | Onboarding sekmesi |
 
 Üçüncü satır asıl kanıttır: content script gerçekten `file://` sayfasına girdi.
@@ -322,7 +322,7 @@ file:///C:/Projects/workspace/doc-highlighter/test-pages/sample.html
 ## 6. `.md` testi — BURAYA DİKKAT
 
 ```
-file:///C:/Projects/workspace/doc-highlighter/test-pages/sample.md
+file:///C:/Projects/workspace/notestark/test-pages/sample.md
 ```
 
 **İki farklı sonuç mümkün ve hangisi olduğu ürünün yönünü belirler:**
@@ -489,7 +489,7 @@ ve Safari'ye taşıma analizi: **[PUBLISHING.md](PUBLISHING.md)**
 ## Paketleme
 
 ```bash
-npm run pack      # dist/doc-highlighter-<version>.zip
+npm run pack      # dist/notestark-<version>.zip
 ```
 
 Yalnızca `extension/` içeriğini zipler (`manifest.json` zip kökünde). `node_modules`,
@@ -499,7 +499,7 @@ kullanır — ek npm bağımlılığı yok.
 ## Dizin yapısı
 
 ```
-doc-highlighter/
+notestark/
   extension/               <- LOAD UNPACKED BURAYI
     _locales/en|tr/         messages.json — ceviriler
     manifest.json

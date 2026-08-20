@@ -345,5 +345,5 @@ file is malformed.
 ---
 
 *These notes were collected while building
-[Doc Highlighter](https://github.com/cansuk/doc-highlighter), a GPL-3.0 extension for
+[Notestark](https://github.com/cansuk/notestark), a GPL-3.0 extension for
 highlighting local `.md` / `.html` files and the web.*

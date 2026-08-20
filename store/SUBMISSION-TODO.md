@@ -6,13 +6,13 @@ Live tracking of the listing. Update as fields are filled.
 > Paket inceleme boyunca **kilitli**; "Yeni paket yükle" pasif. Listing alanları
 > düzenlenebilir durumda.
 >
-> **0.8.1 hazır ve bekliyor** (`dist/doc-highlighter-0.8.1.zip`, `minimum_chrome_version: 105`).
+> **0.8.1 hazır ve bekliyor** (`dist/notestark-0.8.1.zip`, `minimum_chrome_version: 105`).
 > Onay geldikten sonra **ilk güncelleme** olarak yüklenecek. Gönderimi iptal edip 0.8.1'i
 > koymak kuyruğun sonuna düşürürdü; 0.8.1 sertleştirme olduğu ve Chrome 105 Ağustos
 > 2022'de çıktığı için beklemek tercih edildi.
 
-**Item:** Doc Highlighter — Local HTML & Markdown
-**Package:** `dist/doc-highlighter-0.8.1.zip` (46.6 KB) — adds `minimum_chrome_version: 105`
+**Item:** Notestark — Local HTML & Markdown
+**Package:** `dist/notestark-0.8.1.zip` (46.6 KB) — adds `minimum_chrome_version: 105`
 **Category:** Tools
 
 ---
@@ -21,7 +21,7 @@ Live tracking of the listing. Update as fields are filled.
 
 | Field | Source | Note |
 |---|---|---|
-| Package upload | `dist/doc-highlighter-0.8.1.zip` | ⬜ **re-upload needed** — 0.8.0 is the one currently uploaded |
+| Package upload | `dist/notestark-0.8.1.zip` | ⬜ **re-upload needed** — 0.8.0 is the one currently uploaded |
 | Category | Tools | ✅ selected |
 | Store icon 128×128 | `store/listing-icon-128.png` | ✅ 96×96 artwork + 16px transparent padding, per Google's rule |
 | Short description | `store/listing-en.txt` (top block) | 100 / 132 characters |
@@ -107,8 +107,8 @@ timeline stay independent. Pages are written and live in `site/`.
 
 | Field | Planned URL |
 |---|---|
-| Homepage | `/doc-highlighter/` → `site/index.html` |
-| Privacy policy | `/doc-highlighter/privacy` → `site/privacy.html` |
+| Homepage | `/notestark/` → `site/index.html` |
+| Privacy policy | `/notestark/privacy` → `site/privacy.html` |
 | Support | GitHub Issues, or the contact address on the page |
 | Official URL | needs Google Search Console domain verification |
 

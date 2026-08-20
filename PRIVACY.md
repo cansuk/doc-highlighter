@@ -4,7 +4,7 @@
 
 Last updated: 19 August 2026
 
-**Doc Highlighter collects nothing and transmits nothing.** There is no account, no sign-in, no analytics and no third party. Nothing you read, select or write is sent anywhere.
+**Notestark collects nothing and transmits nothing.** There is no account, no sign-in, no analytics and no third party. Nothing you read, select or write is sent anywhere.
 
 Everything you mark stays on the computer you marked it on.
 
@@ -77,7 +77,7 @@ If this policy ever changes, the date at the top changes with it. Should a futur
 
 Questions about this policy, or about what the extension does, can be raised on the public issue tracker:
 
-[https://github.com/cansuk/doc-highlighter/issues](https://github.com/cansuk/doc-highlighter/issues)
+[https://github.com/cansuk/notestark/issues](https://github.com/cansuk/notestark/issues)
 
 ---
 

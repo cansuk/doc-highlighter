@@ -1,24 +1,22 @@
 {
   "extName": {
-    "message": "Doc Highlighter — Local HTML & Markdown",
-    "description": "Extension name shown in Chrome and the Web Store"
+    "message": "Notestark — Highlight & Notes"
   },
   "extShortName": {
-    "message": "Highlighter",
-    "description": "Short name for narrow UI surfaces (max ~12 chars)"
+    "message": "Notestark"
   },
   "extDescription": {
     "message": "Highlight and underline local .md and .html files — your marks survive closing the tab."
   },
   "actionTitle": {
-    "message": "Doc Highlighter",
+    "message": "Notestark",
     "description": "Toolbar button tooltip"
   },
   "onbTitle": {
-    "message": "Doc Highlighter — Setup"
+    "message": "Notestark — Setup"
   },
   "onbHeading": {
-    "message": "Doc Highlighter is installed"
+    "message": "Notestark is installed"
   },
   "onbLede": {
     "message": "To work on local <code>.md</code> and <code>.html</code> files it needs <strong>one Chrome permission</strong> that you must enable by hand. For security reasons an extension cannot grant this itself."
@@ -93,7 +91,7 @@
     }
   },
   "popupTitle": {
-    "message": "Doc Highlighter"
+    "message": "Notestark"
   },
   "popupChecking": {
     "message": "Checking…"
@@ -153,7 +151,7 @@
     "message": "The icon is hidden in the puzzle menu — you cannot see the status colour or open the popup quickly."
   },
   "onbPinHow": {
-    "message": "Click the <strong>puzzle piece</strong> icon in the toolbar, find <strong>Doc Highlighter</strong> in the list, then click the <mark class=\"setting\">pin</mark> icon next to it. The details page has a <mark class=\"setting\">Pin to toolbar</mark> switch that does the same thing."
+    "message": "Click the <strong>puzzle piece</strong> icon in the toolbar, find <strong>Notestark</strong> in the list, then click the <mark class=\"setting\">pin</mark> icon next to it. The details page has a <mark class=\"setting\">Pin to toolbar</mark> switch that does the same thing."
   },
   "onbPinNote": {
     "message": "<strong>Why is there no button here?</strong> Chrome does not let an extension pin itself — there is no API for it, and no manifest key. The toolbar belongs to you. This page can only read the state and detect the moment you pin it."
@@ -213,7 +211,7 @@
     "message": "Click again to confirm"
   },
   "pnlTitle": {
-    "message": "Doc Highlighter"
+    "message": "Notestark"
   },
   "pnlOpen": {
     "message": "Contents"

@@ -11,7 +11,7 @@ Requires Chrome 105 or newer (the CSS Custom Highlight API).
 ================================================================
 A) FASTEST CHECK — on a web page, about 30 seconds
 ================================================================
-1. Click the Doc Highlighter icon in the toolbar to open the popup.
+1. Click the Notestark icon in the toolbar to open the popup.
 2. Click "Enable on all sites" and accept Chrome's permission prompt.
    Website access is declared as an OPTIONAL host permission, so it is deliberately
    NOT requested at install time — it is granted here, by the user.
@@ -27,12 +27,12 @@ A) FASTEST CHECK — on a web page, about 30 seconds
 ================================================================
 B) MAIN USE CASE — a local file, needs one Chrome switch
 ================================================================
-1. Open chrome://extensions, find Doc Highlighter, click "Details".
+1. Open chrome://extensions, find Notestark, click "Details".
 2. Turn ON "Allow access to file URLs".
    The extension CANNOT enable this itself; Chrome reserves it for the user. Flipping
    it restarts the extension, so please open a new tab afterwards.
 3. Download a ready test file:
-   https://raw.githubusercontent.com/cansuk/doc-highlighter/main/test-pages/sample.html
+   https://raw.githubusercontent.com/cansuk/notestark/main/test-pages/sample.html
    (a Markdown one is at .../main/test-pages/sample.md — Markdown needs a viewer
    extension, HTML does not, so the .html file is the simpler check)
 4. Open the saved file in Chrome with Ctrl+O. The address bar must show file:///...
@@ -61,4 +61,4 @@ device. "Website content" is declared in the privacy form because the highlighte
 passages themselves are stored locally.
 
 Full source code, public and GPL-3.0:
-https://github.com/cansuk/doc-highlighter
+https://github.com/cansuk/notestark

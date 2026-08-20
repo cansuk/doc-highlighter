@@ -1,5 +1,5 @@
 /*
- * Doc Highlighter — highlight local and web documents, stored on your device.
+ * Notestark — highlight local and web documents, stored on your device.
  * Copyright (C) 2026 cansuk
  *
  * This program is free software: you can redistribute it and/or modify it under

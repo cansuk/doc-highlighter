@@ -6,7 +6,7 @@
 
 | Gereken | Durum |
 |---|---|
-| Paket zip | ✅ `npm run pack` → `dist/doc-highlighter-<v>.zip` |
+| Paket zip | ✅ `npm run pack` → `dist/notestark-<v>.zip` |
 | 128×128 mağaza ikonu | ✅ `store/listing-icon-128.png` (96px artwork + şeffaf padding) |
 | Manifest V3 | ✅ |
 | Minify edilmemiş kaynak | ✅ (review'ı hızlandırır) |
@@ -27,7 +27,7 @@
 ### Adımlar
 
 1. **Developer hesabı aç** → https://chrome.google.com/webstore/devconsole — $5 tek seferlik
-2. **Yeni öğe** → `dist/doc-highlighter-0.8.1.zip` yükle
+2. **Yeni öğe** → `dist/notestark-0.8.1.zip` yükle
 3. **Store listing** doldur: ad, açıklama, kategori (*Tools*), dil, 128×128 ikon, ekran görüntüsü
 4. **Privacy practices** → aşağıdaki beyanlar
 5. **Gönder** → review

@@ -121,7 +121,7 @@ function marqueeSvg() {
 
   ${iconTile(90, 166, 112)}
 
-  <text x="90" y="360" font-family="${UI}" font-size="68" font-weight="700" fill="#ffffff">Doc Highlighter</text>
+  <text x="90" y="360" font-family="${UI}" font-size="68" font-weight="700" fill="#ffffff">Notestark</text>
   <text x="92" y="410" font-family="${UI}" font-size="30" fill="#cbd5e1">Your highlights come back.</text>
   ${swatchRow(103, 462, 13, 40)}
 
@@ -155,7 +155,7 @@ function smallSvg() {
   ${iconTile((W - 82) / 2, 40, 82)}
 
   <text x="${W / 2}" y="176" text-anchor="middle" font-family="${UI}"
-        font-size="34" font-weight="700" fill="#ffffff">Doc Highlighter</text>
+        font-size="34" font-weight="700" fill="#ffffff">Notestark</text>
 
   <rect x="${tagX - 6}" y="194" width="${tagW + 12}" height="28" fill="${SWATCHES[0]}"/>
   <text x="${tagX}" y="214" font-family="${MONO}" font-size="${tagSize}" fill="${INK}"

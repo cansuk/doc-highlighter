@@ -1,5 +1,5 @@
 /*
- * Doc Highlighter — highlight local and web documents, stored on your device.
+ * Notestark — highlight local and web documents, stored on your device.
  * Copyright (C) 2026 cansuk
  *
  * This program is free software: you can redistribute it and/or modify it under
@@ -8,7 +8,7 @@
  * version. See the LICENSE file, or <https://www.gnu.org/licenses/>.
  */
 /**
- * Doc Highlighter — content script
+ * Notestark — content script
  *
  * Being a SINGLE FILE is a constraint, not a preference: MV3 content_scripts do
  * not support ESM imports (there is no "type":"module"). The alternative is a
@@ -41,7 +41,7 @@
   if (window.__docHighlighterLoaded) return; // the same tab can be injected twice
   window.__docHighlighterLoaded = true;
 
-  const TAG = '[Doc Highlighter]';
+  const TAG = '[Notestark]';
   const UI_ATTR = 'data-dh-ui';
   const DEBUG_KEY = 'dhDebug';
 
@@ -1545,7 +1545,7 @@
       `<button class="handle" data-act="toggle"></button>` +
       `<div class="body">` +
       `<header>` +
-      `<span class="name">${msg('pnlTitle', 'Doc Highlighter')}</span>` +
+      `<span class="name">${msg('pnlTitle', 'Notestark')}</span>` +
       `<button class="icobtn" data-act="preview" title="${msg('pnlPreview', 'Rendered / source')}">&#9776;</button>` +
       `<button class="icobtn" data-act="side" title="${msg('pnlSide', 'Move to the other side')}">&#8646;</button>` +
       `<button class="icobtn" data-act="theme" title="${msg('pnlTheme', 'Light / dark')}">&#9680;</button>` +

@@ -1,5 +1,5 @@
 /*
- * Doc Highlighter — highlight local and web documents, stored on your device.
+ * Notestark — highlight local and web documents, stored on your device.
  * Copyright (C) 2026 cansuk
  *
  * This program is free software: you can redistribute it and/or modify it under
@@ -114,7 +114,7 @@ const label = (key, fallback) => chrome.i18n.getMessage(key) || fallback;
 
 function buildContextMenu() {
   chrome.contextMenus.removeAll(() => {
-    const root = { id: MENU_ROOT, title: label('extName', 'Doc Highlighter'), contexts: ['all'], documentUrlPatterns: PATTERNS };
+    const root = { id: MENU_ROOT, title: label('extName', 'Notestark'), contexts: ['all'], documentUrlPatterns: PATTERNS };
     chrome.contextMenus.create(root);
 
     // Selection-only: highlighting something requires something to be selected,

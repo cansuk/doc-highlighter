@@ -1,5 +1,5 @@
 /*
- * Doc Highlighter — highlight local and web documents, stored on your device.
+ * Notestark — highlight local and web documents, stored on your device.
  * Copyright (C) 2026 cansuk
  *
  * This program is free software: you can redistribute it and/or modify it under
@@ -23,7 +23,7 @@
 
 import { log } from './log.js';
 
-const DYNAMIC_SCRIPT_ID = 'doc-highlighter-web';
+const DYNAMIC_SCRIPT_ID = 'notestark-web';
 const CONTENT_JS = 'src/content/content.js';
 
 /**
@@ -113,7 +113,7 @@ export async function revokeSite(origin) {
  * syncDynamicScripts() is called from three places: service worker start,
  * onInstalled, and permissions.onAdded. When two ran at the same time both saw
  * "not registered" and both called register; the second failed with
- *     Error: Duplicate script ID 'doc-highlighter-web'
+ *     Error: Duplicate script ID 'notestark-web'
  * and the registration was NEVER created — meaning nothing worked on any site.
  *
  * Calls are chained here. ensureRegistered() additionally recovers if a stale
@@ -164,7 +164,7 @@ async function doSync() {
  * What happened (Aug 2026): a failed registerContentScripts caused by the race
  * above left a BROKEN record on disk, because persistAcrossSessions was true.
  * Afterwards Chrome reported two contradictory errors:
- *   register -> "Duplicate script ID 'doc-highlighter-web'"
+ *   register -> "Duplicate script ID 'notestark-web'"
  *   update   -> "Script with ID ... does not exist or is not fully registered"
  * So the id counted as taken while no registration existed; it could neither be
  * updated nor created. getRegisteredContentScripts did NOT return it either —

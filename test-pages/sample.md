@@ -1,6 +1,6 @@
 # Markdown test sayfası
 
-Bu dosya Doc Highlighter'ı denemek için var. İçindeki metinler bilinçli olarak
+Bu dosya Notestark'ı denemek için var. İçindeki metinler bilinçli olarak
 farklı yapılarda: paragraf, liste, tablo, kod, alıntı.
 
 ## Tek element içinde seçim

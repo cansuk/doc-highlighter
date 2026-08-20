@@ -109,7 +109,7 @@ OPEN SOURCE
 The complete source code is public under the GPL-3.0 licence. Every claim above — no
 network request, storage that stays on your device — can be checked by reading it.
 
-https://github.com/cansuk/doc-highlighter
+https://github.com/cansuk/notestark
 
 
 REQUIREMENTS AND LIMITS

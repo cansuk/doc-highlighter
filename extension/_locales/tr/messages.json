@@ -1,24 +1,22 @@
 {
   "extName": {
-    "message": "Doc Highlighter — Lokal HTML & Markdown",
-    "description": "Chrome ve Web Store'da gorunen extension adi"
+    "message": "Notestark — Highlight & Notes"
   },
   "extShortName": {
-    "message": "Highlighter",
-    "description": "Dar alanlar icin kisa ad (~12 karakter)"
+    "message": "Notestark"
   },
   "extDescription": {
     "message": "Lokal .md ve .html dosyalarında highlight ve underline — sekme kapansa da kalır."
   },
   "actionTitle": {
-    "message": "Doc Highlighter",
+    "message": "Notestark",
     "description": "Toolbar buton tooltip'i"
   },
   "onbTitle": {
-    "message": "Doc Highlighter — Kurulum"
+    "message": "Notestark — Kurulum"
   },
   "onbHeading": {
-    "message": "Doc Highlighter kuruldu"
+    "message": "Notestark kuruldu"
   },
   "onbLede": {
     "message": "Lokal <code>.md</code> ve <code>.html</code> dosyalarında çalışabilmesi için Chrome'un <strong>tek bir iznini</strong> elle açman gerekiyor. Bu izin, güvenlik nedeniyle extension tarafından programatik olarak verilemez."
@@ -93,7 +91,7 @@
     }
   },
   "popupTitle": {
-    "message": "Doc Highlighter"
+    "message": "Notestark"
   },
   "popupChecking": {
     "message": "Kontrol ediliyor…"
@@ -153,7 +151,7 @@
     "message": "İkon puzzle menüsünde gizli — durum rengini göremez, popup'ı hızlıca açamazsın."
   },
   "onbPinHow": {
-    "message": "Toolbar'daki <strong>puzzle parçası</strong> simgesine tıkla, listede <strong>Doc Highlighter</strong>'ı bul ve yanındaki <mark class=\"setting\">raptiye</mark> ikonuna bas. Detay sayfasındaki <mark class=\"setting\">Pin to toolbar</mark> anahtarı da aynı işi yapar."
+    "message": "Toolbar'daki <strong>puzzle parçası</strong> simgesine tıkla, listede <strong>Notestark</strong>'ı bul ve yanındaki <mark class=\"setting\">raptiye</mark> ikonuna bas. Detay sayfasındaki <mark class=\"setting\">Pin to toolbar</mark> anahtarı da aynı işi yapar."
   },
   "onbPinNote": {
     "message": "<strong>Neden burada bir buton yok?</strong> Chrome bir extension'ın kendini sabitlemesine izin vermiyor — ne API var ne de manifest anahtarı. Toolbar senin alanın. Bu sayfa yalnızca durumu okuyabilir ve sabitlediğin anı algılayabilir."
@@ -213,7 +211,7 @@
     "message": "Onaylamak için tekrar tıkla"
   },
   "pnlTitle": {
-    "message": "Doc Highlighter"
+    "message": "Notestark"
   },
   "pnlOpen": {
     "message": "İçindekiler"

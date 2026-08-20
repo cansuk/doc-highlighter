@@ -109,7 +109,7 @@ AÇIK KAYNAK
 Kaynak kodun tamamı GPL-3.0 lisansıyla açık. Yukarıdaki her iddia — ağ isteği yok,
 verinin cihazdan çıkmaması — kodu okuyarak doğrulanabilir.
 
-https://github.com/cansuk/doc-highlighter
+https://github.com/cansuk/notestark
 
 
 GEREKSİNİMLER VE SINIRLAR

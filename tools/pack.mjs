@@ -2,7 +2,7 @@
  * Chrome Web Store icin zip uretir — yalnizca extension/ icerigi.
  * node_modules, tools/, assets/, store/ pakete GIRMEZ.
  *
- * Calistirma:  npm run pack   ->  dist/doc-highlighter-<version>.zip
+ * Calistirma:  npm run pack   ->  dist/notestark-<version>.zip
  *
  * Node'un yerlesik zip'i yok; Windows'ta PowerShell Compress-Archive kullaniliyor
  * (ek bir npm bagimliligi eklememek icin).
@@ -21,7 +21,7 @@ const SRC = join(ROOT, 'extension');
 const DIST = join(ROOT, 'dist');
 
 const manifest = JSON.parse(await readFile(join(SRC, 'manifest.json'), 'utf8'));
-const out = join(DIST, `doc-highlighter-${manifest.version}.zip`);
+const out = join(DIST, `notestark-${manifest.version}.zip`);
 
 await mkdir(DIST, { recursive: true });
 await rm(out, { force: true });

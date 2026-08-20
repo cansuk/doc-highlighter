@@ -1,5 +1,5 @@
 /*
- * Doc Highlighter — highlight local and web documents, stored on your device.
+ * Notestark — highlight local and web documents, stored on your device.
  * Copyright (C) 2026 cansuk
  *
  * This program is free software: you can redistribute it and/or modify it under
@@ -22,7 +22,7 @@ import { t, localizeDom } from '../shared/i18n.js';
 
 localizeDom();
 
-const REPO = 'https://github.com/cansuk/doc-highlighter';
+const REPO = 'https://github.com/cansuk/notestark';
 const PALETTE_KEY = 'dhPalette';
 const TR_KEY = 'dhTranslate';
 const PREFS_KEY = 'dhPanelPrefs';
