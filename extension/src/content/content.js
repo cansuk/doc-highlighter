@@ -476,9 +476,9 @@
       urlNormalized: state.url,
       contentHash: state.hash,
       title: document.title,
-      // Epoch milliseconds, like createdAt. Two encodings in one record is how the
-            // Recent panel ended up dividing a string by a number.
-            updatedAt: Date.now(),
+      // Epoch milliseconds, like createdAt. Two encodings in one record is how
+      // the Recent panel ended up subtracting a string from a number.
+      updatedAt: Date.now(),
       highlights: state.highlights,
     };
 
