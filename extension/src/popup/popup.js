@@ -117,9 +117,22 @@ const UNITS = [
   ['minute', 60],
 ];
 
+/**
+ * A stored time, whichever way it was written. Records hold an ISO string or
+ * epoch milliseconds depending on when they were made; subtracting the string
+ * form gives NaN, and Intl.RelativeTimeFormat throws on NaN instead of
+ * shrugging — which took the whole panel down.
+ */
+function asMs(v) {
+  if (v == null) return null;
+  const ms = typeof v === 'number' ? v : Date.parse(v);
+  return Number.isFinite(ms) ? ms : null;
+}
+
 function ago(ts) {
-  if (!ts || !rtf) return '';
-  const secs = (ts - Date.now()) / 1000;
+  const ms = asMs(ts);
+  if (ms === null || !rtf) return '';
+  const secs = (ms - Date.now()) / 1000;
   for (const [unit, size] of UNITS) {
     if (Math.abs(secs) >= size) return rtf.format(Math.round(secs / size), unit);
   }
@@ -172,7 +185,7 @@ async function drawRecent() {
   const docs = Object.entries(all)
     .filter(([k, v]) => k.startsWith('doc:') && Array.isArray(v?.highlights) && v.highlights.length)
     .map(([key, rec]) => ({ key, rec }))
-    .sort((a, b) => (b.rec.updatedAt ?? 0) - (a.rec.updatedAt ?? 0))
+    .sort((a, b) => (asMs(b.rec.updatedAt) ?? 0) - (asMs(a.rec.updatedAt) ?? 0))
     .slice(0, DOCS_SHOWN);
 
   box.textContent = '';
@@ -206,14 +219,17 @@ async function drawRecent() {
     const when = document.createElement('span');
     when.className = 'when';
     when.textContent = ago(rec.updatedAt);
-    when.title = rec.updatedAt ? new Date(rec.updatedAt).toLocaleString(uiLang) : '';
+    const exact = asMs(rec.updatedAt);
+        when.title = exact === null ? '' : new Date(exact).toLocaleString(uiLang);
 
     head.append(where, when);
     wrap.appendChild(head);
 
     // Newest first inside the document too: the reason you opened this list is
     // almost always the thing you did last.
-    const marks = [...rec.highlights].sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+    const marks = [...rec.highlights].sort(
+          (a, b) => (asMs(b.createdAt) ?? 0) - (asMs(a.createdAt) ?? 0),
+        );
 
     const list = document.createElement('ul');
     for (const h of marks.slice(0, MARKS_PER_DOC)) {

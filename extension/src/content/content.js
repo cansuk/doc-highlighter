@@ -476,7 +476,9 @@
       urlNormalized: state.url,
       contentHash: state.hash,
       title: document.title,
-      updatedAt: new Date().toISOString(),
+      // Epoch milliseconds, like createdAt. Two encodings in one record is how the
+            // Recent panel ended up dividing a string by a number.
+            updatedAt: Date.now(),
       highlights: state.highlights,
     };
 
@@ -1586,9 +1588,19 @@
    * "14:32", something from last month is a date. The exact timestamp lives on the
    * title attribute for anyone who needs it.
    */
+  /**
+   * A stored time, whichever way it was written. Older records hold an ISO string
+   * and newer ones epoch milliseconds; both are read, and anything unparseable
+   * becomes null rather than an Invalid Date that fails later and further away.
+   */
+  function asDate(v) {
+    if (v == null) return null;
+    const ms = typeof v === 'number' ? v : Date.parse(v);
+    return Number.isFinite(ms) ? new Date(ms) : null;
+  }
   function stamp(ts) {
-    if (!ts) return null;
-    const d = new Date(ts);
+    const d = asDate(ts);
+    if (!d) return null;
     const sameDay = d.toDateString() === new Date().toDateString();
     const lang = chrome.i18n.getUILanguage?.() || undefined;
     const el = document.createElement('span');
@@ -2917,6 +2929,7 @@
         renderNoteDots,
         PALETTE,
         paletteCss,
+        asDate,
         stamp,
         trPrefs,
         hasTranslator,

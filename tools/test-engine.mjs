@@ -1118,6 +1118,76 @@ const MD_DOC = [
   });
 }
 
+
+// --- zaman formati ----------------------------------------------------------
+// Bir kayit iki farkli zaman kodlamasi tasiyordu: updatedAt ISO string, createdAt
+// epoch. String'i cikarmak NaN veriyor ve Intl.RelativeTimeFormat NaN'i kabul
+// etmiyor — panel ilk kaydi okurken tamamen dusuyordu. Diskte zaten string
+// tasiyan kayitlar var ve hep olacak, o yuzden OKUMA ikisini de kabul etmeli.
+
+{
+  const { api } = await boot();
+
+  check('epoch sayisi cozumlenir', () => {
+    const d = api.asDate(1700000000000);
+    // instanceof DEGIL: jsdom kendi realm indeki Date i doner, instanceof realm asmaz.
+    truthy(typeof d?.getTime === 'function', 'Date arayuzu');
+    eq(d.getTime(), 1700000000000, 'deger');
+  });
+
+  check('ISO string cozumlenir', () => {
+    const d = api.asDate('2026-08-20T09:30:00.000Z');
+    truthy(typeof d?.toISOString === 'function', 'Date arayuzu');
+    eq(d.toISOString(), '2026-08-20T09:30:00.000Z', 'deger');
+  });
+
+  check('cozulemeyen deger null olur, Invalid Date DEGIL', () => {
+    // Invalid Date sessizce yolculuga devam eder ve cok daha uzakta patlar;
+    // null hemen orada durur.
+    eq(api.asDate('bir tarih degil'), null, 'metin');
+    eq(api.asDate(undefined), null, 'undefined');
+    eq(api.asDate(null), null, 'null');
+    eq(api.asDate(NaN), null, 'NaN');
+  });
+
+  check('stamp cozulemeyen zamanda PATLAMAZ', () => {
+    let threw = null;
+    try {
+      eq(api.stamp('bozuk'), null, 'null dondu');
+      eq(api.stamp(undefined), null, 'null dondu');
+    } catch (e) {
+      threw = e;
+    }
+    eq(threw, null, 'istisna yok');
+  });
+}
+
+{
+  // Yazma tarafi tek formata inmeli: ayni kayitta iki kodlama bulundurmak
+  // hatanin kaynagiydi.
+  const { window, api } = await boot();
+  const doc = window.document;
+  const r = doc.createRange();
+  const p = doc.getElementById('p1');
+  r.setStart(p.firstChild, 0);
+  r.setEnd(p.firstChild, 10);
+  await api.applyToSelection(r, { color: 'yellow' });
+
+  const saved = await window.chrome.storage.local.get(null);
+  const rec = Object.entries(saved).find(([k]) => k.startsWith('doc:'))?.[1];
+
+  check('updatedAt ve createdAt AYNI turde yazilir', () => {
+    truthy(rec, 'kayit var');
+    eq(typeof rec.updatedAt, 'number', 'updatedAt turu');
+    eq(typeof rec.highlights[0].createdAt, 'number', 'createdAt turu');
+  });
+
+  check('yazilan zamanlar cozumlenebilir', () => {
+    truthy(Number.isFinite(rec.updatedAt), 'updatedAt sonlu');
+    truthy(Number.isFinite(api.asDate(rec.updatedAt)?.getTime()), 'Date e cevrilebiliyor');
+  });
+}
+
 // --- sonuc ------------------------------------------------------------------
 
 console.log(`\n${pass} gecti, ${failures.length} kaldi\n`);
