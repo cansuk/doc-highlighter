@@ -3,6 +3,22 @@
 Lokal `.md` / `.html` dosyalarında ve izin verdiğin web sitelerinde highlight ve
 underline; sekme kapansa da kalıcı.
 
+![Bir pasajı seçip renklendirme, not yazma ve sayfayı yenileme](docs/img/notestark-flow.gif)
+
+*Seç, renklendir, not yaz — sonra yenile. İşaretler de not da yerinde duruyor.*
+
+![Lokal bir Markdown dosyasında highlight](docs/img/local-md.png)
+
+*Diskten doğrudan açılan bir `.md` dosyası: kaynak yığını olarak değil, doküman olarak
+render ediliyor ve iskeleti panelde duruyor. Adres `file://` — sunucu yok, yükleme yok,
+hesap yok.*
+
+![Web sayfasında highlight](docs/img/web-mdn.png)
+
+*Aynı motor web'de; sayfadaki her işaret panelde listeleniyor. Satır içi `code`
+parçaları kenardan kenara kaplanıyor — highlight API'si metin akışını boyadığı için
+elementin kendi padding'i ayrıca doldurulmalı.*
+
 | Sürüm | Ne geldi |
 |---|---|
 | **0.10.1** | Panel handle'i markanin sarisiyla ve glow ile cizildi — onceki hali panelin kendi soluk renklerindeydi ve yogun bir sayfada gorunmuyordu. Genislik degisimi rezerve edilen sayfa margin'ine kendiliginden yansidi (ikisi ayni sabiti okuyor) |

@@ -5,15 +5,21 @@ Your marks come back when you reopen the document.
 
 *[Türkçe dokümantasyon → README.tr.md](README.tr.md)*
 
+![Selecting a passage, colouring it, writing a note, and reloading the page](docs/img/notestark-flow.gif)
+
+*Select, colour, annotate — then reload. The marks are still there, and so is the note.*
+
 ![Highlighting a local Markdown file](docs/img/local-md.png)
 
-*A local `.md` file opened straight from disk — six colours, underline, and colour and
-underline combined. Note the `file://` address: no server, no upload, no account.*
+*A local `.md` file opened straight from disk, rendered as a document rather than as a
+wall of source, with its outline in the panel. Note the `file://` address: no server, no
+upload, no account.*
 
 ![Highlighting a page on the web](docs/img/web-mdn.png)
 
-*The same engine on the web. Inline `code` chips are covered edge to edge — the
-highlight API paints text runs, so an element's own padding needs filling separately.*
+*The same engine on the web, with every mark on the page listed in the panel. Inline
+`code` chips are covered edge to edge — the highlight API paints text runs, so an
+element's own padding needs filling separately.*
 
 ---
 
