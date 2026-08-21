@@ -32,21 +32,34 @@ B) MAIN USE CASE — a local file, needs one Chrome switch
    The extension CANNOT enable this itself; Chrome reserves it for the user. Flipping
    it restarts the extension, so please open a new tab afterwards.
 3. Download a ready test file:
-   https://raw.githubusercontent.com/cansuk/notestark/main/test-pages/sample.html
-   (a Markdown one is at .../main/test-pages/sample.md — Markdown needs a viewer
-   extension, HTML does not, so the .html file is the simpler check)
+   https://raw.githubusercontent.com/cansuk/doc-highlighter/main/test-pages/sample.md
+   (an HTML one is at .../main/test-pages/sample.html if you prefer)
 4. Open the saved file in Chrome with Ctrl+O. The address bar must show file:///...
-5. Select text, pick a colour, then reload the page. The marks return.
+5. The .md file is rendered as a document — headings, code blocks, lists — rather than
+   shown as raw text. That rendering is done by this extension itself; no viewer
+   extension is involved and nothing is fetched to do it. The panel on the edge of the
+   page carries the document outline; one button in it switches back to the source.
+6. Select text, pick a colour, then reload the page. The marks return.
 
 
 ================================================================
 ALSO WORTH LOOKING AT
 ================================================================
 - Pressing the same colour or underline again removes it.
-- The eraser button clears every highlight on the page, behind a two-step
-  confirmation ("Delete all N?" — click again to confirm).
-- The popup shows the current file-access state, an "Enable on this site" switch and
-  an "Enable on all sites" switch. Access can be revoked from the same place.
+- The note button writes a note on the selected passage. A small dot marks it; click
+  the dot and the note opens.
+- The language button translates the selected passage using Chrome's own built-in
+  translator, on the device (Chrome 138+ on desktop). The passage is not sent to any
+  translation service. A translation can be kept as a note. The first use of a language
+  pair makes Chrome download a language model — that download is Chrome's, carries no
+  page text, and does not happen unless the button is pressed.
+- The eraser follows the selection: with text selected it clears only that selection,
+  with nothing selected it clears the whole page behind a two-step confirmation
+  ("Delete N?" — click again to confirm).
+- Everything above is also on the right-click menu.
+- The popup shows the current file-access state, an "Enable on this site" switch, an
+  "Enable on all sites" switch, and a list of what was marked recently. Access can be
+  revoked from the same place.
 - An onboarding page opens on install and explains the file-access switch; it detects
   the moment the switch is turned on.
 
