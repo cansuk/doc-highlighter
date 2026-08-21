@@ -61,4 +61,4 @@ device. "Website content" is declared in the privacy form because the highlighte
 passages themselves are stored locally.
 
 Full source code, public and GPL-3.0:
-https://github.com/cansuk/notestark
+https://github.com/cansuk/doc-highlighter

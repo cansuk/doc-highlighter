@@ -22,7 +22,7 @@ import { t, localizeDom } from '../shared/i18n.js';
 
 localizeDom();
 
-const REPO = 'https://github.com/cansuk/notestark';
+const REPO = 'https://github.com/cansuk/doc-highlighter';
 const PALETTE_KEY = 'dhPalette';
 const TR_KEY = 'dhTranslate';
 const PREFS_KEY = 'dhPanelPrefs';

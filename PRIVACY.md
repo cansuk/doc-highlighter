@@ -77,7 +77,7 @@ If this policy ever changes, the date at the top changes with it. Should a futur
 
 Questions about this policy, or about what the extension does, can be raised on the public issue tracker:
 
-[https://github.com/cansuk/notestark/issues](https://github.com/cansuk/notestark/issues)
+[https://github.com/cansuk/doc-highlighter/issues](https://github.com/cansuk/doc-highlighter/issues)
 
 ---
 

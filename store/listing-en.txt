@@ -1,6 +1,11 @@
+=== NAME (max 75 characters) ===
+
+Notestark Notes — Highlight Local Markdown & the Web
+
+
 === SHORT DESCRIPTION (max 132 characters) ===
 
-Highlight local .md and .html files and the web. Your marks come back — and never leave your device.
+Highlight and annotate local Markdown and the web. Your marks come back — and never leave your device.
 
 
 === DETAILED DESCRIPTION ===
@@ -21,49 +26,90 @@ That is the reason it exists. If you read technical documentation offline, nothi
 covers it well.
 
 
-NOTHING LEAVES YOUR DEVICE
+READ MARKDOWN AS A DOCUMENT, NOT AS SOURCE
 
-No account. No sign-in. No server. No network request anywhere in the extension.
+Chrome shows a local .md file as a wall of plain text. Notestark renders it — headings,
+code blocks, lists, tables, quotes — and one button in the panel switches back to the
+source whenever you want it.
 
-Your highlights are stored by the extension on your own machine. They are not in a
-cookie, so they are never sent to a website. They are not in the page's own storage, so
-a site cannot read them or wipe them. There is no cloud, no sync, and nothing to leak.
+The renderer is part of the extension. Nothing is fetched to draw your file, and no
+third-party code runs on it.
 
 
 SIX COLOURS, PLUS UNDERLINE — AND THEY COMBINE
 
 Yellow, green, pink, blue, orange, purple, and a separate underline. A passage can be
 yellow AND underlined; pressing one never clears the other. Press the same thing again
-to remove it. One button clears every highlight on the page, with a confirmation step.
+to remove it.
 
 The palette was chosen by measurement, not by eye: every colour keeps text at WCAG AAA
 contrast, and the colours are kept apart in brightness so they stay distinguishable
-under colour vision deficiency.
+under colour vision deficiency. You can change any of them, and the contrast is shown
+as you pick.
+
+
+WRITE A NOTE ON A PASSAGE
+
+Select a sentence, press the note button, and write. A small mark appears at the end of
+the passage; click it and your note opens exactly where you left it.
+
+Notes are stored with the mark they belong to, so when the document is edited and the
+passage moves, the note travels with it.
+
+
+TRANSLATE A PASSAGE, ON YOUR DEVICE
+
+Press the language button and the selected passage is translated into your target
+language — using the translator built into Chrome, on your own machine. The passage is
+not sent to a translation service.
+
+A translation can be kept as a note, and notes made that way are marked differently from
+the ones you wrote yourself, so you can always tell them apart.
+
+Needs Chrome 138 or newer on desktop. Where it is unavailable the feature says so
+instead of failing when pressed.
 
 
 FIND YOUR WAY AROUND A LONG DOCUMENT
 
 A panel docks to either edge of the page, and folds away when you do not want it.
 
-One tab is the document outline — every heading, indented by level, click to jump.
-This works on local Markdown files too, where there are no headings for an extension
-to read: the outline is built from the "# " syntax in the text itself.
+One tab is the document outline — every heading, indented by level, click to jump. This
+works on local Markdown files too, where there are no headings for an extension to read:
+the outline is built from the "# " syntax in the text itself.
 
-The other tab lists every highlight on the page, in the order they appear in the
-document. Click one and the page scrolls to it and frames it for a moment, so you never
-lose a mark in a long file again.
-
-The panel remembers which side you put it on, and whether you prefer light or dark.
+The other tabs list every highlight and every note on the page, in the order they appear
+in the document, with the time each was made. Click one and the page scrolls to it and
+frames it for a moment.
 
 
-WRITE A NOTE ON A PASSAGE
+PICK UP WHERE YOU LEFT OFF
 
-Select a sentence, press the note button, and write. A small dot appears at the end of
-the passage; click it and your note opens exactly where you left it.
+Open the menu and you see what you marked, newest first, grouped by where you marked
+it — the site, or the filename for a local document. Click a place to open it again,
+fold it away, or clear everything you marked there.
 
-Notes are stored with the mark they belong to, so when the document is edited and the
-passage moves, the note travels with it. They are listed in the panel as well, on the
-row of the highlight they belong to.
+
+REACHABLE WITHOUT MOVING THE MOUSE
+
+Everything the toolbar does is also on the right-click menu: colour, underline, note,
+the panel, rendered or source view, and clearing the page.
+
+The eraser follows your selection. With text selected it clears only what you selected;
+with nothing selected it clears the page, behind a confirmation step.
+
+
+NOTHING LEAVES YOUR DEVICE
+
+No account. No sign-in. No server. Nothing you read, select or write is sent anywhere.
+
+Your highlights are stored by the extension on your own machine. They are not in a
+cookie, so they are never sent to a website. They are not in the page's own storage, so
+a site cannot read them or wipe them. There is no cloud, no sync, and nothing to leak.
+
+One thing said plainly rather than glossed over: the first time you translate between a
+pair of languages, Chrome downloads a language model. That download is made by Chrome,
+carries no page text, and never happens unless you press translate.
 
 
 IT DOES NOT BREAK THE PAGE
@@ -97,7 +143,7 @@ Installing asks for nothing about websites. Access is granted by you, when you w
   page and turn on "Allow access to file URLs". The extension cannot do this for you;
   only you can.
 
-• Websites — open the toolbar popup and choose "Enable on this site" or "Enable on all
+• Websites — open the toolbar menu and choose "Enable on this site" or "Enable on all
   sites". You can turn it off again the same way, at any time.
 
 The extension reads the address of the tab you are on only to tell you whether
@@ -109,12 +155,12 @@ OPEN SOURCE
 The complete source code is public under the GPL-3.0 licence. Every claim above — no
 network request, storage that stays on your device — can be checked by reading it.
 
-https://github.com/cansuk/notestark
+https://github.com/cansuk/doc-highlighter
 
 
 REQUIREMENTS AND LIMITS
 
-• Chrome 105 or newer
+• Chrome 105 or newer; translation needs Chrome 138 or newer on desktop
 • Chrome does not let any extension work on chrome:// pages, the Web Store, or other
   extensions' pages
 • Tags and search do not exist yet

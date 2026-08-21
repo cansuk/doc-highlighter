@@ -1,6 +1,11 @@
+=== AD (en fazla 75 karakter) ===
+
+Notestark Notes — Highlight Local Markdown & the Web
+
+
 === KISA AÇIKLAMA (en fazla 132 karakter) ===
 
-Lokal .md ve .html dosyalarında ve web'de highlight. İşaretlerin geri gelir — ve cihazından hiç çıkmaz.
+Lokal Markdown'da ve web'de highlight ve not. İşaretlerin geri gelir — ve cihazından hiç çıkmaz.
 
 
 === DETAYLI AÇIKLAMA ===
@@ -21,87 +26,127 @@ Var oluş sebebi bu. Teknik dokümantasyonu çevrimdışı okuyorsan, bunu iyi k
 başka bir araç yok.
 
 
-HİÇBİR VERİ CİHAZINDAN ÇIKMAZ
+MARKDOWN'I KAYNAK OLARAK DEĞİL, DOKÜMAN OLARAK OKU
 
-Hesap yok. Giriş yok. Sunucu yok. Eklentinin hiçbir yerinde ağ isteği yok.
+Chrome lokal bir .md dosyasını düz metin duvarı olarak gösterir. Notestark onu render
+eder — başlıklar, kod blokları, listeler, tablolar, alıntılar — ve panel üzerindeki tek
+bir düğme istediğin an kaynağa geri döner.
 
-İşaretlerin kendi makinende, eklentinin kendi alanında saklanır. Çerezde değildir —
-yani hiçbir siteye gönderilmez. Sayfanın kendi deposunda da değildir — yani bir site
-onları okuyamaz ve silemez. Bulut yok, senkron yok, sızacak bir şey yok.
+Renderer eklentinin kendi parçası. Dosyanı çizmek için hiçbir şey indirilmiyor ve
+üzerinde üçüncü taraf kodu çalışmıyor.
 
 
 ALTI RENK VE ALTI ÇİZİLİ — BİRLİKTE KULLANILABİLİR
 
 Sarı, yeşil, pembe, mavi, turuncu, mor ve ayrı bir altı çizili. Bir bölüm hem sarı hem
-altı çizili olabilir; birine basmak diğerini silmez. Aynı şeye tekrar basmak onu
-kaldırır. Tek bir buton sayfadaki tüm işaretleri temizler, onay adımıyla.
+altı çizili olabilir; birine basmak diğerini silmez. Aynı şeye tekrar basmak onu kaldırır.
 
-Palet göz kararı değil, ölçülerek seçildi: her renk metni WCAG AAA kontrastında tutar
-ve renkler parlaklık olarak birbirinden ayrık — renk görme eksikliğinde de ayırt
-edilebilsinler diye.
-
-
-UZUN DOKUMANDA YOLUNU BUL
-
-Sayfanin istedigin kenarina yaslanan, istemedigin zaman katlanan bir panel.
-
-Bir sekmesi dokumanin iskeleti — her baslik, seviyesine gore girintili, tiklayinca o
-noktaya gidiyor. Lokal Markdown dosyalarinda da calisiyor; orada okunacak bir baslik
-elementi yok, iskelet dogrudan metindeki "# " sozdiziminden kuruluyor.
-
-Diger sekmesi sayfadaki tum highlight'lari, dokumandaki siralariyla listeliyor.
-Birine tikladiginda sayfa oraya kayiyor ve kisa sureligine cerceve iciyor aliniyor —
-uzun bir dosyada isaretini bir daha kaybetmiyorsun.
-
-Panel hangi tarafta durdugunu ve acik mi koyu mu tercih ettigini hatirliyor.
+Palet göz kararı değil, ölçülerek seçildi: her renk metni WCAG AAA kontrastında tutar ve
+renkler parlaklık olarak birbirinden ayrık — renk görme eksikliğinde de ayırt edilebilsinler
+diye. Hepsini değiştirebilirsin; seçerken kontrast yanında gösterilir.
 
 
 PASAJA NOT YAZ
 
-Bir cumleyi sec, not butonuna bas, yaz. Pasajin sonunda kucuk bir nokta beliriyor;
-tikladiginda notun biraktigin yerde aciliyor.
+Bir cümleyi seç, not düğmesine bas, yaz. Pasajın sonunda küçük bir işaret beliriyor;
+tıkladığında notun bıraktığın yerde açılıyor.
 
-Notlar ait olduklari isaretle birlikte saklaniyor; doküman duzenlenip pasaj yer
-degistirdiginde not da onunla birlikte tasiniyor. Panelde de, ait olduklari
-highlight'in satirinda listeleniyorlar.
+Notlar ait oldukları işaretle birlikte saklanıyor; doküman düzenlenip pasaj yer
+değiştirdiğinde not da onunla birlikte taşınıyor.
+
+
+PASAJI CİHAZINDA ÇEVİR
+
+Dil düğmesine bastığında seçili pasaj hedef diline çevriliyor — Chrome'un yerleşik
+çevirmeniyle, kendi makinende. Pasaj bir çeviri servisine gönderilmiyor.
+
+Çeviri not olarak saklanabiliyor ve böyle oluşan notlar, kendi yazdıklarından farklı
+işaretleniyor; hangisinin hangisi olduğunu her zaman görebiliyorsun.
+
+Masaüstünde Chrome 138 veya üzeri gerekiyor. Kullanılamadığı yerde özellik basıldığında
+patlamak yerine durumu söylüyor.
+
+
+UZUN DOKÜMANDA YOLUNU BUL
+
+Sayfanın istediğin kenarına yaslanan, istemediğin zaman katlanan bir panel.
+
+Bir sekmesi dokümanın iskeleti — her başlık, seviyesine göre girintili, tıklayınca o
+noktaya gidiyor. Lokal Markdown dosyalarında da çalışıyor; orada okunacak bir başlık
+elementi yok, iskelet doğrudan metindeki "# " sözdiziminden kuruluyor.
+
+Diğer sekmeler sayfadaki tüm highlight'ları ve notları, dokümandaki sıralarıyla ve
+oluşturulma zamanlarıyla listeliyor. Birine tıkladığında sayfa oraya kayıyor ve kısa
+süreliğine çerçeve içine alınıyor.
+
+
+KALDIĞIN YERDEN DEVAM ET
+
+Menüyü açtığında işaretlediklerini görüyorsun: en yenisi üstte, işaretlediğin yere göre
+gruplanmış — web sitesi ya da lokal bir doküman için dosya adı. Bir yere tıklayıp
+yeniden açabilir, katlayabilir ya da orada işaretlediğin her şeyi silebilirsin.
+
+
+FAREYİ HİÇ KIMILDATMADAN
+
+Araç çubuğunun yaptığı her şey sağ tık menüsünde de var: renk, altı çizili, not, panel,
+render/kaynak görünümü ve sayfayı temizleme.
+
+Silgi seçimini izliyor. Metin seçiliyken yalnızca seçtiğini siliyor; seçim yokken
+sayfanın tamamını, onay adımıyla.
+
+
+HİÇBİR VERİ CİHAZINDAN ÇIKMAZ
+
+Hesap yok. Giriş yok. Sunucu yok. Okuduğun, seçtiğin ya da yazdığın hiçbir şey hiçbir
+yere gönderilmiyor.
+
+İşaretlerin kendi makinende, eklentinin kendi alanında saklanıyor. Çerezde değil — yani
+hiçbir siteye gönderilmiyor. Sayfanın kendi deposunda da değil — yani bir site onları
+okuyamıyor ve silemiyor. Bulut yok, senkron yok, sızacak bir şey yok.
+
+Üstünü örtmek yerine açıkça söylenen tek şey: bir dil çiftini ilk kez çevirdiğinde
+Chrome bir dil modeli indiriyor. O indirmeyi Chrome yapıyor, sayfa metni taşımıyor ve
+sen çeviri düğmesine basmadıkça hiç gerçekleşmiyor.
 
 
 SAYFAYI BOZMAZ
 
 İşaretleme, metnini fazladan elementlerle sarmalayarak değil, CSS Custom Highlight API
-ile çizilir. Sayfa düzeni bozulmaz; başlık, liste ve tablo sınırlarını aşan seçimler
-doğru çalışır; kopyaladığın metne bir şey karışmaz.
+ile çiziliyor. Sayfa düzeni bozulmuyor; başlık, liste ve tablo sınırlarını aşan seçimler
+doğru çalışıyor; kopyaladığın metne bir şey karışmıyor.
 
 
 DOKÜMAN DEĞİŞSE DE İŞARETLER KALIR
 
-Her işaret, seçtiğin metni ve çevresindeki kelimeleri hatırlar. Doküman düzenlenip
-bölüm yer değiştirdiğinde, işaret o bağlamı eşleştirerek yeniden bulunur. Metin
-silinmişse işaret atılmaz — bekler, ve metin geri geldiğinde o da geri gelir.
+Her işaret, seçtiğin metni ve çevresindeki kelimeleri hatırlıyor. Doküman düzenlenip
+bölüm yer değiştirdiğinde, işaret o bağlamı eşleştirerek yeniden bulunuyor. Metin
+silinmişse işaret atılmıyor — bekliyor, ve metin geri geldiğinde o da geri geliyor.
 
-Lokal bir dosyanın adını değiştirmek ya da taşımak da işaretlerini kaybettirmez.
+Lokal bir dosyanın adını değiştirmek ya da taşımak da işaretlerini kaybettirmiyor.
 
 
 GÖMÜLÜ ÇERÇEVELERDE DE ÇALIŞIR
 
-Bazı sayfalar asıl içeriğini gömülü bir çerçevede gösterir. Onlar da desteklenir. Metni
-çok az olan çerçeveler atlanır; böylece reklam ve izleme çerçeveleri hiçbir maliyet
-getirmez.
+Bazı sayfalar asıl içeriğini gömülü bir çerçevede gösteriyor. Onlar da destekleniyor.
+Metni çok az olan çerçeveler atlanıyor; böylece reklam ve izleme çerçeveleri hiçbir
+maliyet getirmiyor.
 
 
 İZİNLER, SADE DİLLE
 
-Kurulum web siteleriyle ilgili hiçbir şey istemez. Erişimi, istediğin anda sen verirsin:
+Kurulum web siteleriyle ilgili hiçbir şey istemiyor. Erişimi, istediğin anda sen
+veriyorsun:
 
-• Lokal dosyalar — Chrome bunu kendi anahtarının arkasında tutar. Eklentinin detay
+• Lokal dosyalar — Chrome bunu kendi anahtarının arkasında tutuyor. Eklentinin detay
   sayfasını açıp "Dosya URL'lerine erişime izin ver" anahtarını aç. Eklenti bunu senin
   yerine yapamaz; yalnızca sen yapabilirsin.
 
-• Web siteleri — toolbar'daki simgeye tıkla ve "Bu sitede aç" ya da "Tüm sitelerde aç"
+• Web siteleri — araç çubuğundaki menüyü aç ve "Bu sitede aç" ya da "Tüm sitelerde aç"
   seç. İstediğin zaman aynı yerden kapatabilirsin.
 
 Eklenti, bulunduğun sekmenin adresini yalnızca orada highlight yapılıp yapılamayacağını
-sana söylemek için okur.
+sana söylemek için okuyor.
 
 
 AÇIK KAYNAK
@@ -109,14 +154,14 @@ AÇIK KAYNAK
 Kaynak kodun tamamı GPL-3.0 lisansıyla açık. Yukarıdaki her iddia — ağ isteği yok,
 verinin cihazdan çıkmaması — kodu okuyarak doğrulanabilir.
 
-https://github.com/cansuk/notestark
+https://github.com/cansuk/doc-highlighter
 
 
 GEREKSİNİMLER VE SINIRLAR
 
-• Chrome 105 veya üzeri
+• Chrome 105 veya üzeri; çeviri için masaüstünde Chrome 138 veya üzeri
 • Chrome hiçbir eklentinin chrome:// sayfalarında, Web Store'da ve diğer eklentilerin
-  sayfalarında çalışmasına izin vermez
+  sayfalarında çalışmasına izin vermiyor
 • Etiket ve arama henüz yok
-• Bazı tek sayfa uygulamaları yüklendikten sonra adresini değiştirir; bu, bir işaretin
+• Bazı tek sayfa uygulamaları yüklendikten sonra adresini değiştiriyor; bu, bir işaretin
   yeniden bulunmasını zorlaştırabilir

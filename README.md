@@ -68,7 +68,7 @@ frames with almost no text are skipped so ad and tracking frames cost nothing.
 
 Not on the Chrome Web Store yet. To run it from source:
 
-1. `git clone https://github.com/cansuk/notestark`
+1. `git clone https://github.com/cansuk/doc-highlighter`
 2. `npm install && npm run icons` — generates the PNG icon set
 3. Open `chrome://extensions`, enable **Developer mode**
 4. **Load unpacked** → select the **`extension/`** folder (not the repo root)
