@@ -392,5 +392,20 @@
   },
   "qmPanelFailed": {
     "message": "Bu bölüm yüklenemedi"
+  },
+  "qmCollapse": {
+    "message": "Katla"
+  },
+  "qmExpand": {
+    "message": "Aç"
+  },
+  "qmWipeSite": {
+    "message": "Buradaki her şeyi sil"
+  },
+  "qmWipeConfirm": {
+    "message": "Hepsini sil?"
+  },
+  "qmWipeConfirmHint": {
+    "message": "Onaylamak için tekrar tıkla"
   }
 }

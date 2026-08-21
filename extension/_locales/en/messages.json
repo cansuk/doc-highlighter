@@ -392,5 +392,20 @@
   },
   "qmPanelFailed": {
     "message": "This section could not load"
+  },
+  "qmCollapse": {
+    "message": "Collapse"
+  },
+  "qmExpand": {
+    "message": "Expand"
+  },
+  "qmWipeSite": {
+    "message": "Clear everything marked here"
+  },
+  "qmWipeConfirm": {
+    "message": "Clear all?"
+  },
+  "qmWipeConfirmHint": {
+    "message": "Click again to confirm"
   }
 }

@@ -202,27 +202,70 @@ async function drawRecent() {
     const wrap = document.createElement('div');
     wrap.className = 'doc';
 
-    const head = document.createElement('a');
-    head.href = rec.url ?? '#';
-    head.title = rec.title || rec.url || '';
+    const head = document.createElement('div');
+    head.className = 'head';
+
+    const caret = document.createElement('button');
+    caret.className = 'caret';
+    caret.textContent = '\u25BC';
+    caret.title = t('qmCollapse');
+    caret.addEventListener('click', () => {
+      const folded = wrap.hasAttribute('data-collapsed');
+      if (folded) wrap.removeAttribute('data-collapsed');
+      else wrap.setAttribute('data-collapsed', '');
+      caret.title = folded ? t('qmCollapse') : t('qmExpand');
+    });
+
+    // A link, so the place still opens where it always did.
+    const where = document.createElement('a');
+    where.className = 'where';
+    where.href = rec.url ?? '#';
+    where.title = rec.title || rec.url || '';
+    where.textContent = placeOf(rec, key);
     if (rec.url) {
-      head.addEventListener('click', (e) => {
+      where.addEventListener('click', (e) => {
         e.preventDefault();
         chrome.tabs.create({ url: rec.url });
       });
     }
 
-    const where = document.createElement('span');
-    where.className = 'where';
-    where.textContent = placeOf(rec, key);
-
     const when = document.createElement('span');
     when.className = 'when';
     when.textContent = ago(rec.updatedAt);
     const exact = asMs(rec.updatedAt);
-        when.title = exact === null ? '' : new Date(exact).toLocaleString(uiLang);
+    when.title = exact === null ? '' : new Date(exact).toLocaleString(uiLang);
 
-    head.append(where, when);
+    // Two-step, like the page-wide eraser: everything for a site is a lot to lose
+    // to one stray click, and inventing a second confirmation idiom for the same
+    // kind of decision would only make both harder to recognise.
+    const wipe = document.createElement('button');
+    wipe.className = 'wipe';
+    wipe.textContent = '\u00D7';
+    wipe.title = t('qmWipeSite');
+    let armTimer = null;
+    wipe.addEventListener('click', async () => {
+      if (!wipe.hasAttribute('data-armed')) {
+        wipe.setAttribute('data-armed', '');
+        wipe.textContent = t('qmWipeConfirm');
+        wipe.title = t('qmWipeConfirmHint');
+        armTimer = setTimeout(() => {
+          wipe.removeAttribute('data-armed');
+          wipe.textContent = '\u00D7';
+          wipe.title = t('qmWipeSite');
+        }, 4000);
+        return;
+      }
+      clearTimeout(armTimer);
+      // The hash index points at this document; leaving it behind would make a
+      // renamed file resurrect a record that no longer exists.
+      const stale = Object.entries(all)
+        .filter(([k, v]) => k.startsWith('hash:') && v === rec.urlNormalized)
+        .map(([k]) => k);
+      await chrome.storage.local.remove([key, ...stale]);
+      await drawRecent();
+    });
+
+    head.append(caret, where, when, wipe);
     wrap.appendChild(head);
 
     // Newest first inside the document too: the reason you opened this list is

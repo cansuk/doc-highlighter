@@ -2887,6 +2887,15 @@
           Object.assign(trPrefs, changes[TR_KEY].newValue ?? {});
           refreshLangButton();
         }
+        // Only REMOVAL is acted on. This script writes that key itself on every save,
+              // and reacting to its own writes would loop; a removal is something only the
+              // popup does.
+              const myKey = IN_FRAME ? frameKey(state.hash) : docKey(state.url);
+              if (changes[myKey] && changes[myKey].newValue === undefined && state.highlights.length) {
+                log(`${TAG} kayit disaridan silindi — sayfa temizleniyor`);
+                state.highlights = [];
+                applyAll(buildIndex());
+              }
         if (changes[PREFS_KEY]) {
           Object.assign(prefs, changes[PREFS_KEY].newValue ?? {});
           syncPanelChrome();

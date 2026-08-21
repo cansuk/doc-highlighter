@@ -89,11 +89,33 @@
 
   /* --- recent ------------------------------------------------------------- */
   .doc { margin-bottom: 12px; }
+  .doc > .head {
+    display: flex; align-items: baseline; gap: 6px;
+    padding: 4px 2px 4px 4px; border-radius: 7px;
+  }
+  .doc > .head:hover { background: var(--hi); }
+  .caret {
+    flex: none; width: 16px; height: 16px; border: 0; padding: 0; cursor: pointer;
+    background: none; color: var(--muted); font-size: 10px; line-height: 1;
+    align-self: center; transition: transform .12s ease;
+  }
+  .caret:hover { color: var(--ink); }
+  .doc[data-collapsed] .caret { transform: rotate(-90deg); }
+  .doc[data-collapsed] ul, .doc[data-collapsed] .more { display: none; }
+  .wipe {
+    flex: none; border: 0; padding: 2px 5px; border-radius: 6px; cursor: pointer;
+    background: none; color: var(--muted); font-size: 12px; line-height: 1;
+  }
+  .wipe:hover { background: var(--hi); color: #c5221f; }
+  .wipe[data-armed] {
+    background: #c5221f; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 7px;
+  }
+
   .doc > a {
     display: flex; align-items: baseline; gap: 8px; text-decoration: none;
     color: var(--ink); padding: 4px 6px; border-radius: 7px;
   }
-  .doc > a:hover { background: var(--hi); }
+  .doc .where:hover { text-decoration: underline; }
   .doc .where {
     font-weight: 650; font-size: 12.5px; flex: 1; min-width: 0;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
