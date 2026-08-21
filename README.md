@@ -125,7 +125,6 @@ two things:
 
 - **"Read and change all your data on all websites"** at install time
 - the **manual review queue** on the Chrome Web Store: weeks instead of days
-  (see [PUBLISHING.md](PUBLISHING.md))
 
 So the permission is behind a button. One click still enables every site; the outcome is
 the same and it costs nothing.
@@ -464,8 +463,9 @@ found through the URL index and the highlights are re-anchored.
 | `file:///*` | The core use case: local documentation files. Chrome gates this behind its own switch, which the extension cannot flip |
 | `*://*/*` *(optional)* | Requested only on your click, never at install time |
 
-Copy-paste justification texts for the Web Store form are in
-[PUBLISHING.md](PUBLISHING.md).
+Every one of them is requested for a reason stated above; none is used for anything
+else. The full source is public, so each claim here can be checked rather than taken on
+trust.
 
 ## Development
 
@@ -610,7 +610,6 @@ painted. If bold returns, it appears again on its own.
 | [docs/onboarding.md](docs/onboarding.md) | Why an onboarding page is necessary, the flow, and how state stays correct |
 | [docs/icon-pipeline.md](docs/icon-pipeline.md) | How the icon set is generated and why every size is rendered natively |
 | [docs/i18n.md](docs/i18n.md) | How translation works, how the language is chosen, and why there is no language picker |
-| [PUBLISHING.md](PUBLISHING.md) | Chrome Web Store steps, permission justification texts, and the Safari porting analysis |
 | [PRIVACY.md](PRIVACY.md) | The privacy policy, generated from the published page |
 
 ## Roadmap
@@ -626,9 +625,17 @@ different and has no equivalent of "Allow access to file URLs".
 
 **The question to answer before writing any of it:** *does Safari give extensions access
 to local `.md` / `.html` files at all?* If it does not, the product's core use case does
-not work there and the port has no point. Full analysis, including the untested API list
-and the cost (Apple Developer Program at \$99/year, plus a Mac), is in
-[PUBLISHING.md § Safari](PUBLISHING.md).
+not work there and the port has no point — so that gets measured before a line is
+written, not after.
+
+Three more things are unverified because there is no Mac here to try them on: whether
+Safari implements the **CSS Custom Highlight API** at all (the entire painting layer
+depends on it, and the fallback would be `<mark>` wrapping — the approach this engine
+exists to avoid), whether `isAllowedFileSchemeAccess()` and
+`chrome.action.getUserSettings()` have equivalents, and how
+`optional_host_permissions` maps onto Safari's own permission model. The cost of finding
+out is an Apple Developer Program membership at \$99/year plus a Mac, so it waits for
+demand.
 
 **Not scheduled:** bold (see above), tags on a highlight, an "all my highlights" screen
 across documents (which needs IndexedDB rather than `chrome.storage.local`, for

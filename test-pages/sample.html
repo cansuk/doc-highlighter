@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="tr">
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Notestark — HTML test sayfası</title>
+  <title>Notestark — HTML test page</title>
   <style>
     body { max-width: 46rem; margin: 3rem auto; padding: 0 1.5rem;
            font: 16px/1.7 Georgia, "Times New Roman", serif; color: #1f2937; }
@@ -20,50 +20,52 @@
   </style>
 </head>
 <body>
-  <h1>HTML test sayfası</h1>
-  <p class="lead">Bu dosya Notestark'ı denemek için var. İçindeki metinler
-  bilinçli olarak farklı yapılarda: paragraf, liste, tablo, kod, alıntı.</p>
+  <h1>HTML test page</h1>
+  <p class="lead">This file exists to try Notestark on. The text in it is deliberately
+  made of different structures: paragraphs, a list, a table, code and a quote.</p>
 
-  <h2>Tek element içinde seçim</h2>
-  <p>Bu paragrafın tamamı tek bir metin düğümü içinde duruyor. Highlight'ın en kolay
-  senaryosu budur: seçim başlangıcı ve bitişi aynı element içindedir, anchor tek bir
-  offset çiftiyle ifade edilebilir. Bu cümleyi baştan sona seçmeyi dene.</p>
+  <h2>Selection inside one element</h2>
+  <p>This whole paragraph sits inside a single text node. It is the easiest case for a
+  highlight: the selection starts and ends inside the same element, so the anchor is one
+  pair of offsets. Try selecting this sentence from beginning to end.</p>
 
-  <h2>Elementler arası seçim</h2>
-  <p>Zor senaryo şu: seçim <strong>bir elementte başlayıp</strong> başka bir elementte
-  bitiyorsa, DOM wrapping yaklaşımı <em>iç içe geçmiş</em> yapılar üretir ve sayfayı
-  bozar. CSS Custom Highlight API bunu DOM'a hiç dokunmadan çözer. Bu paragrafın
-  ortasından başlayıp aşağıdaki listenin ikinci maddesine kadar sürükleyerek seç.</p>
+  <h2>Selection across elements</h2>
+  <p>The hard case is this: when a selection <strong>starts in one element</strong> and
+  ends in another, the DOM wrapping approach produces <em>nested</em> structures and
+  breaks the page. The CSS Custom Highlight API solves it without touching the DOM at
+  all. Start dragging from the middle of this paragraph and stop at the second item of
+  the list below.</p>
 
   <ul>
-    <li>Birinci madde — kısa.</li>
-    <li>İkinci madde — seçimin burada bitmesini dene.</li>
-    <li>Üçüncü madde — bu dışarıda kalsın.</li>
+    <li>First item — short.</li>
+    <li>Second item — try ending the selection here.</li>
+    <li>Third item — leave this one out.</li>
   </ul>
 
-  <h2>Tekrar eden metin</h2>
-  <p>Anchoring'in en sinsi sorunu: aynı metin sayfada birden çok kez geçtiğinde
-  hangisinin highlight'landığını ayırt etmek. Aşağıdaki üç satırda <code>durum</code>
-  kelimesi üç kez geçiyor ve bağlamları farklı.</p>
+  <h2>Repeated text</h2>
+  <p>The sneakiest problem in anchoring: telling which occurrence was highlighted when
+  the same text appears several times on a page. The word <code>status</code> appears
+  three times in the rows below, in three different contexts.</p>
 
   <table>
-    <tr><th>Alan</th><th>Açıklama</th></tr>
-    <tr><td>durum</td><td>Başvurunun mevcut durum bilgisi</td></tr>
-    <tr><td>durum</td><td>Ödemenin durum kodu</td></tr>
-    <tr><td>durum</td><td>Sertifikanın durum geçmişi</td></tr>
+    <tr><th>Field</th><th>Description</th></tr>
+    <tr><td>status</td><td>The application's current status</td></tr>
+    <tr><td>status</td><td>The status code of the payment</td></tr>
+    <tr><td>status</td><td>The certificate's status history</td></tr>
   </table>
 
-  <blockquote>Bir highlight, sayfa yeniden yüklendiğinde aynı yere oturmuyorsa
-  highlight değildir; sadece bir kez görülmüş bir renktir.</blockquote>
+  <blockquote>A highlight that does not land in the same place when the page is reloaded
+  is not a highlight. It is a colour someone saw once.</blockquote>
 
-  <h2>Uzun metin</h2>
-  <p>Kaydırma gerektiren bir bölge olsun diye buradan aşağısı doldurma metnidir.
-  Sayfa yeniden yüklendiğinde highlight'ın görünür alanın dışında kalması ve
-  kullanıcının onu bulamaması ayrı bir UX sorunudur; ileride "highlight'a git"
-  navigasyonu gerekebilir. Şimdilik yalnızca içerik uzunluğu için buradalar.</p>
+  <h2>Long text</h2>
+  <p>Everything from here down is filler, so that there is a region which needs
+  scrolling. A highlight ending up outside the visible area after a reload — where the
+  reader cannot find it — is a separate UX problem from whether it was restored at all;
+  a "go to highlight" navigation may be needed later. For now these are here for length
+  only.</p>
 
-  <p>İçerik hash'i test etmek için: bu dosyayı kopyalayıp adını değiştir. Hash aynı
-  kaldığı sürece highlight'lar yeni dosyada da görünmeli. Sonra bu paragrafa bir
-  kelime ekle — hash değişir, o zaman fallback anchoring devreye girmeli.</p>
+  <p>To test the content hash: copy this file and rename the copy. As long as the hash
+  is unchanged, the highlights should appear in the new file too. Then add a word to
+  this paragraph — the hash changes, and fallback anchoring has to take over.</p>
 </body>
 </html>

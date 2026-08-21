@@ -1,48 +1,50 @@
-# Markdown test sayfası
+# Markdown test page
 
-Bu dosya Notestark'ı denemek için var. İçindeki metinler bilinçli olarak
-farklı yapılarda: paragraf, liste, tablo, kod, alıntı.
+This file exists to try Notestark on. The text in it is deliberately made of different
+structures: paragraphs, lists, a table, code and a quote.
 
-## Tek element içinde seçim
+## Selection inside one element
 
-Bu paragrafın tamamı tek bir metin bloğu. Highlight'ın en kolay senaryosu budur:
-seçim başlangıcı ve bitişi aynı blok içindedir. Bu cümleyi baştan sona seçmeyi dene.
+This whole paragraph is a single block of text. It is the easiest case for a highlight:
+the selection starts and ends inside the same block. Try selecting this sentence from
+beginning to end.
 
-## Elementler arası seçim
+## Selection across elements
 
-Zor senaryo şu: seçim **bir blokta başlayıp** başka bir blokta bitiyorsa, DOM wrapping
-yaklaşımı *iç içe geçmiş* yapılar üretir. Bu paragrafın ortasından başlayıp aşağıdaki
-listenin ikinci maddesine kadar sürükleyerek seç.
+The hard case is this: when a selection **starts in one block** and ends in another, the
+DOM wrapping approach produces *nested* structures. Start dragging from the middle of
+this paragraph and stop at the second item of the list below.
 
-- Birinci madde — kısa.
-- İkinci madde — seçimin burada bitmesini dene.
-- Üçüncü madde — bu dışarıda kalsın.
+- First item — short.
+- Second item — try ending the selection here.
+- Third item — leave this one out.
 
-## Tekrar eden metin
+## Repeated text
 
-Anchoring'in en sinsi sorunu: aynı metin sayfada birden çok kez geçtiğinde hangisinin
-highlight'landığını ayırt etmek. Aşağıdaki üç satırda `durum` kelimesi üç kez geçiyor.
+The sneakiest problem in anchoring: telling which occurrence was highlighted when the
+same text appears several times on a page. The word `status` appears three times in the
+rows below.
 
-| Alan  | Açıklama                        |
-|-------|---------------------------------|
-| durum | Başvurunun mevcut durum bilgisi |
-| durum | Ödemenin durum kodu             |
-| durum | Sertifikanın durum geçmişi      |
+| Field  | Description                          |
+|--------|--------------------------------------|
+| status | The application's current status      |
+| status | The status code of the payment        |
+| status | The certificate's status history      |
 
-> Bir highlight, sayfa yeniden yüklendiğinde aynı yere oturmuyorsa highlight değildir;
-> sadece bir kez görülmüş bir renktir.
+> A highlight that does not land in the same place when the page is reloaded is not a
+> highlight. It is a colour someone saw once.
 
-## Uzun metin
+## Long text
 
-Kaydırma gerektiren bir bölge olsun diye buradan aşağısı doldurma metnidir. Sayfa
-yeniden yüklendiğinde highlight'ın görünür alanın dışında kalması ve kullanıcının onu
-bulamaması ayrı bir UX sorunudur.
+Everything from here down is filler, so that there is a region which needs scrolling.
+A highlight ending up outside the visible area after a reload — where the reader cannot
+find it — is a separate UX problem from whether it was restored at all.
 
-İçerik hash'i test etmek için: bu dosyayı kopyalayıp adını değiştir. Hash aynı kaldığı
-sürece highlight'lar yeni dosyada da görünmeli. Sonra bu paragrafa bir kelime ekle —
-hash değişir, fallback anchoring devreye girmeli.
+To test the content hash: copy this file and rename the copy. As long as the hash is
+unchanged, the highlights should appear in the new file too. Then add a word to this
+paragraph — the hash changes, and fallback anchoring has to take over.
 
 ```js
-// kod blogu — secim burada da calismali
+// code block — selection has to work in here as well
 const key = await sha256(document.body.innerText);
 ```

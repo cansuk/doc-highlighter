@@ -1,3 +1,9 @@
 node_modules/
 dist/
 assets/_preview.png
+
+# Internal notes. Not in the repository: this is a public project and these are
+# working documents in Turkish — the language alone is the reason, independent of
+# whether anything in them is sensitive. They stay on disk, untracked.
+PUBLISHING.md
+store/SUBMISSION-TODO.md
