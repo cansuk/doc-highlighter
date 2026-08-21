@@ -1521,6 +1521,35 @@
     if (!existing) document.head?.appendChild(el) ?? document.documentElement.appendChild(el);
   }
 
+  /**
+   * Pushes the document aside by the docked width — and then checks that it
+   * actually moved.
+   *
+   * The root element ignores a right margin whenever its own width is not auto,
+   * which is true on a large share of real sites; the margin is over-constrained
+   * and dropped, with no error and no warning. <body> accepts it in those cases.
+   * There is no way to tell which applies from the outside, so the rule is written,
+   * measured, and swapped if the page refused it.
+   */
+  function reserveSpace(px) {
+    const side = prefs.side;
+    const rule = (sel) =>
+      `${sel} { margin-${side}: ${px}px !important; transition: margin .18s ease; }`;
+
+    pageStyle(LAYOUT_ID, rule('html'));
+
+    // Measured synchronously. getComputedStyle flushes pending style changes, so
+    // what is read here is what will paint. requestAnimationFrame was tried first
+    // and was wrong: it does not fire in a background tab, so a page opened or
+    // restored in the background would never have got the fallback at all.
+    const prop = side === 'right' ? 'marginRight' : 'marginLeft';
+    const got = parseFloat(getComputedStyle(document.documentElement)[prop]) || 0;
+    if (got < px - 1) {
+      log(`${TAG} kok eleman margin'i yok saydi (${got}px) — body'ye geciliyor`);
+      pageStyle(LAYOUT_ID, rule('body'));
+    }
+  }
+
   function applyPageChrome() {
     if (!isTopFrame) return;
 
@@ -1529,10 +1558,7 @@
     pageStyle(THEME_ID, PAGE_THEME[prefs.theme]);
 
     const reserved = prefs.open ? PANEL_W + HANDLE_W : HANDLE_W;
-    pageStyle(
-      LAYOUT_ID,
-      `html { margin-${prefs.side}: ${reserved}px !important; transition: margin .18s ease; }`,
-    );
+    reserveSpace(reserved);
   }
 
   function buildPanel() {
@@ -2951,6 +2977,7 @@
         mdInline,
         canPreview,
         setPreview,
+        reserveSpace,
         applyPageChrome,
         syncPanelChrome,
       };

@@ -1188,6 +1188,41 @@ const MD_DOC = [
   });
 }
 
+// --- panele yer acma --------------------------------------------------------
+//
+// Kok elemana verilen margin, kok elemanin genisligi auto degilse tarayici
+// tarafindan sessizce dusuruluyor (over-constrained). Hata da uyari da yok;
+// panel icerigin ustune biniyor. Bu yuzden kural yazildiktan sonra OLCULUYOR.
+
+{
+  const { window, api } = await boot();
+  const doc = window.document;
+  const css = () => doc.getElementById('dh-page-layout')?.textContent ?? '';
+  const asilOlcum = window.getComputedStyle;
+
+  // Kokun kabul ettigi sayfa: olculen deger istenene esit.
+  window.getComputedStyle = () => ({ marginRight: '332px', marginLeft: '332px' });
+  api.reserveSpace(332);
+  const kabulEden = css();
+
+  // Kokun reddettigi sayfa: MDN'de olculen davranis — kural yazilir, 0px okunur.
+  window.getComputedStyle = () => ({ marginRight: '0px', marginLeft: '0px' });
+  api.reserveSpace(332);
+  const reddeden = css();
+
+  window.getComputedStyle = asilOlcum;
+
+  check('kok margin i kabul edince kural html de kalir', () => {
+    truthy(kabulEden.startsWith('html {'), 'html hedefli bekleniyordu, gelen: ' + kabulEden);
+    truthy(kabulEden.includes('332px'), 'genislik yazilmis');
+  });
+
+  check('kok margin i yok sayinca kural body ye gecer', () => {
+    truthy(reddeden.startsWith('body {'), 'body hedefli bekleniyordu, gelen: ' + reddeden);
+    truthy(reddeden.includes('332px'), 'genislik korunmus');
+  });
+}
+
 // --- sonuc ------------------------------------------------------------------
 
 console.log(`\n${pass} gecti, ${failures.length} kaldi\n`);
