@@ -77,6 +77,17 @@ content_scripts entry is not possible because those sites are not known at insta
 time — the user grants them one by one at runtime.
 ```
 
+**`contextMenus`** — **0.14.0'da eklendi, 0.8.0'da yoktu.** Panelde bu alan boş gelecek; doldurulmadan gönderim açılmaz.
+```
+Adds the extension's own actions to the right-click menu on a selection: colour,
+underline, note, and switching between the rendered and source view of a Markdown
+file. This is what makes the extension reachable without moving the pointer off the
+passage the user just selected, which matters for a tool used while reading. The menu
+is limited to file:// and http(s) pages so it never appears where the extension cannot
+act, and every item is carried out by the content script — the menu itself reads
+nothing from the page.
+```
+
 **`host_permissions: file:///*`**
 ```
 The core use case is highlighting local .md and .html documentation files opened from
@@ -94,10 +105,12 @@ that page. Permission can be revoked the same way. The extension never requests 
 sites at once.
 ```
 
-**Single purpose**
+**Single purpose** — 0.8.0'daki hâli notu ve çeviriyi kapsamıyordu; ikisi de eklendiği için yeniden yazıldı. Tek amaç ifadesi hâlâ **tek** bir cümle: ürün "okuduğun pasajı işaretlemek", not ve çeviri de o pasaja bağlı işaretler.
 ```
-Let the user highlight and underline passages in documents they read in the browser,
-and have those marks reappear on later visits.
+Let the user mark up passages in documents they read in the browser — a colour, an
+underline, a note, or a translation kept as a note — and have those marks reappear
+when the document is opened again. Everything the extension adds is attached to a
+passage the user selected; there is no second, unrelated function.
 ```
 
 ### Review süresi — beklenti

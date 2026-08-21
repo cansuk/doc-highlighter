@@ -1,137 +1,128 @@
-# Chrome Web Store submission — checklist
+# Chrome Web Store — 0.16.0 güncellemesi
 
-Live tracking of the listing. Update as fields are filled.
+> **DURUM — 21.08.2026.** Mağazada yayında olan sürüm **0.8.0**. Yüklenecek olan
+> **0.16.0**: 0.8.0'dan bu yana sekiz sürümlük iş var (markdown preview, panel,
+> sticky note, sağ tık menüsü, cihaz üstü çeviri, Recent sekmesi, isim değişikliği).
 
-> **DURUM — 18.08.2026: 0.8.0 incelemeye gönderildi.** Panelde "İncelenmeyi bekliyor".
-> Paket inceleme boyunca **kilitli**; "Yeni paket yükle" pasif. Listing alanları
-> düzenlenebilir durumda.
->
-> **0.8.1 hazır ve bekliyor** (`dist/notestark-0.8.1.zip`, `minimum_chrome_version: 105`).
-> Onay geldikten sonra **ilk güncelleme** olarak yüklenecek. Gönderimi iptal edip 0.8.1'i
-> koymak kuyruğun sonuna düşürürdü; 0.8.1 sertleştirme olduğu ve Chrome 105 Ağustos
-> 2022'de çıktığı için beklemek tercih edildi.
-
-**Item:** Notestark — Local HTML & Markdown
-**Package:** `dist/notestark-0.8.1.zip` (46.6 KB) — adds `minimum_chrome_version: 105`
-**Category:** Tools
+**Paket:** `dist/notestark-0.16.0.zip` — 81.0 KB
+**Ad:** Notestark Notes — Highlight Local Markdown & the Web
+**Kategori:** Tools
 
 ---
 
-## Done
+## Yüklenecek dosyalar — hepsi hazır
 
-| Field | Source | Note |
+| Alan | Dosya | Ölçüldü |
 |---|---|---|
-| Package upload | `dist/notestark-0.8.1.zip` | ⬜ **re-upload needed** — 0.8.0 is the one currently uploaded |
-| Category | Tools | ✅ selected |
-| Store icon 128×128 | `store/listing-icon-128.png` | ✅ 96×96 artwork + 16px transparent padding, per Google's rule |
-| Short description | `store/listing-en.txt` (top block) | 100 / 132 characters |
-| Detailed description | `store/listing-en.txt` (bottom block) | 3,167 / 16,000 characters |
-| Small promo tile 440×280 | `store/promo-small-440x280.png` | ✅ generated, 24-bit, no alpha |
-| Marquee promo tile 1400×560 | `store/promo-marquee-1400x560.png` | ✅ generated, 24-bit, no alpha |
+| Paket | `dist/notestark-0.16.0.zip` | 81.0 KB |
+| Ekran görüntüsü 1 | `store/screenshots/1-web.png` | 1280×800, PNG, 3 kanal, alfa yok |
+| Ekran görüntüsü 2 | `store/screenshots/2-markdown.png` | 1280×800, PNG, 3 kanal, alfa yok |
+| Ekran görüntüsü 3 | `store/screenshots/3-note.png` | 1280×800, PNG, 3 kanal, alfa yok |
+| Ekran görüntüsü 4 | `store/screenshots/4-translate.png` | 1280×800, PNG, 3 kanal, alfa yok |
+| Store ikonu 128×128 | `store/listing-icon-128.png` | 128×128, alfa **var** — bu alanda doğrusu bu |
+| Küçük tanıtım 440×280 | `store/promo-small-440x280.png` | 24-bit, alfa yok |
+| Kayan yazı 1400×560 | `store/promo-marquee-1400x560.png` | 24-bit, alfa yok |
+| Metinler (EN) | `store/listing-en.txt` | ad 52/75 · kısa 102/132 · uzun 6026/16000 |
+| Metinler (TR) | `store/listing-tr.txt` | ad 52/75 · kısa 96/132 · uzun 5915/16000 |
 
-Both tiles are produced by `npm run promo` (`tools/build-promo.mjs`), which asserts
-size, channel count and absence of an alpha channel before it exits.
+Alfa kuralı yalnızca **ekran görüntüleri ve tanıtım görselleri** için geçerli; store
+ikonundaki şeffaf 16px kenar Google'ın kendi istediği şey.
 
----
-
-## Asset format audit
-
-Measured, not assumed:
-
-| File | Size | Format | Channels | Alpha | Rule |
-|---|---|---|---|---|---|
-| `screenshot-2-local.jpg` | 1280×800 | JPEG | 3 | no | screenshot |
-| `screenshot-1-web.jpg` | 1280×800 | JPEG | 3 | no | screenshot |
-| `promo-small-440x280.png` | 440×280 | PNG | 3 | no | small tile |
-| `promo-marquee-1400x560.png` | 1400×560 | PNG | 3 | no | marquee tile |
-| `listing-icon-128.png` | 128×128 | PNG | 4 | **yes** | store icon |
-
-The store icon is the one asset where alpha is correct — the transparent 16px margin
-is what Google asks for. The no-alpha rule applies only to screenshots and promo tiles.
+Ekran görüntüleri `node tools/shot.mjs "<pencere başlığı>" <ad>` ile üretiliyor. Arayüz
+değişince elle yeniden çekmek gerekmiyor — eskisi tam olarak böyle bayatlamıştı.
 
 ---
 
-## Pending
+## 0.8.0'dan bu yana DEĞİŞEN ve panelde iş çıkaracak şeyler
 
-### 1. Localized screenshots — REQUIRED, max 5
+### 1. Yeni izin: `contextMenus` — alan boş gelecek
 
-Currently produced: **2 of 5**.
+0.14.0'da sağ tık menüsüyle birlikte eklendi. Chrome, yeni bir izin gördüğünde
+**Gizlilik uygulamaları** sekmesinde o izne ait boş bir gerekçe alanı açar ve
+doldurulmadan gönderim düğmesi açılmaz.
 
-| # | File | Shows | Status |
-|---|---|---|---|
-| 1 | `store/screenshot-2-local.jpg` | Local `.md` open from disk, `file://` visible in the address bar, six colours, underline, colour+underline combined | ✅ 1280×800 |
-| 2 | `store/screenshot-1-web.jpg` | The same engine on the web (MDN), inline `code` chips covered edge to edge | ✅ 1280×800 |
-| 3 | — | Toolbar close-up: six swatches, underline, eraser, delete — with the active-style ring visible | ⬜ not made |
-| 4 | — | Popup: file-access status, per-site and all-sites switches | ⬜ not made |
-| 5 | — | Clear-all two-step confirmation, or the onboarding page | ⬜ not made |
+Hazır metin: `PUBLISHING.md` → *Permission justification* → **`contextMenus`**.
 
-Rules: 1280×800 (or 640×400), PNG or JPEG, no rounded corners added by us.
+Diğer izinlerin (`storage`, `activeTab`, `scripting`, `file:///*`, `*://*/*`)
+gerekçeleri 0.8.0'da girildi ve **korunur**; yeniden yazılmaları gerekmez.
 
-**Note:** 3-5 are optional in the sense that one screenshot satisfies the requirement,
-but a listing with a single image looks thin. Aim for at least 3.
+### 2. Tek amaç (single purpose) ifadesi yeniden yazıldı
 
-**Who can capture what:** frames on `http(s)` pages can be captured through browser
-automation. Anything on a `file://` page, the popup, or `chrome://extensions` must be
-captured by hand — browser automation cannot reach those surfaces.
+0.8.0'daki hâli yalnızca "highlight ve underline" diyordu; artık not ve çeviri de var.
+Yeni metin `PUBLISHING.md` içinde. Eskisi teknik olarak yanlış olmasa da eksik, ve
+eksik bir tek amaç ifadesi manuel incelemeye düşmenin bilinen sebeplerinden.
 
-### 2. Promo video — optional
+### 3. Ürün adı değişti
 
-The store accepts a **YouTube URL** only; a file cannot be uploaded.
+Listelemedeki ad `Notestark Notes — Highlight Local Markdown & the Web` olacak.
+Depo adı `doc-highlighter` olarak **kalıyor** (bilinçli — yalnızca bu eklenti açık
+kaynak). Açıklama metnindeki GitHub linki eski adı gösteriyor, doğrusu bu.
 
-Suggested 30-second cut:
-1. A local `.md` open from disk
-2. Select a sentence → the toolbar appears
-3. Pick a colour → it is applied
-4. Add an underline on top of the colour
-5. Reload the page → the marks are still there
-6. End on the `file://` address bar and the line "nothing leaves your device"
+### 4. Açıklama metinlerindeki sınırlar bölümü güncellendi
 
-Recording and uploading needs a screen recorder and a YouTube account, so this is a
-manual step. Not required for submission — it can be added after publishing.
-
-### 3. Privacy practices tab
-
-Not filled yet. Prepared answers are in `PUBLISHING.md`:
-
-- Single purpose statement
-- Justification text for each permission (`storage`, `activeTab`, `scripting`,
-  `file:///*`, optional `*://*/*`)
-- Data-collection declaration — **"Website content" must be ticked**: selected text is
-  stored, on the device only. Nothing is transmitted.
-- A privacy policy URL may be requested as a result of that tick — not written yet.
-
-### 3.5 Homepage / Support / Privacy policy URLs
-
-Hosted on the author's own domain rather than GitHub, so repo visibility and the store
-timeline stay independent. Pages are written and live in `site/`.
-
-| Field | Planned URL |
-|---|---|
-| Homepage | `/notestark/` → `site/index.html` |
-| Privacy policy | `/notestark/privacy` → `site/privacy.html` |
-| Support | GitHub Issues, or the contact address on the page |
-| Official URL | needs Google Search Console domain verification |
-
-**Blocked:** `multiappsoftwareservices.com` currently serves an expired TLS certificate —
-measured 17 Aug 2026: HTTP 301 to HTTPS, then Chrome refuses to render the page. The
-privacy policy URL must load cleanly before submission, or review can fail on a link
-that has nothing to do with the extension.
-
-Still to fill in `site/`: `CONTACT_EMAIL` (4 places) and `STORE_URL` (1 place).
-
-### 4. Turkish listing — optional
-
-`store/listing-tr.txt` is ready. Add Turkish as a language in the dashboard and paste
-it. The extension itself already ships English and Turkish, so the listing matching
-that is consistent, though not required.
+0.8.0'da "not, etiket, arama yok" yazıyordu. Not artık **var**; metinlerde kalan sınır
+"etiket ve arama henüz yok". Eski metni kopyalayıp yapıştırma.
 
 ---
 
-## Decided, for the record
+## Sırasıyla ne yapılacak
 
-- **Not minified.** Minified or obfuscated submissions take longer to review, and the
-  package is 46.6 KB — there is nothing to gain.
-- **Repository is public** as of 18 August 2026, GPL-3.0. An OPEN SOURCE section with the
-  repo link is now part of both listings.
-- **Limits are stated in the description on purpose** (Chrome 105+, no notes/tags/
-  search, weak persistence in some SPAs). Hiding them produces one-star reviews.
+1. **Paket** — Paket → Yeni paket yükle → `dist/notestark-0.16.0.zip`
+2. **Ekran görüntüleri** — Mağaza girişi → önceki iki görseli **kaldır**, dört PNG'yi yükle
+3. **Ad ve açıklamalar** — `store/listing-en.txt` içindeki üç bloğu yapıştır
+4. **Gizlilik uygulamaları** — `contextMenus` gerekçesi + yeni tek amaç ifadesi
+5. **Türkçe** — dil ekle, `store/listing-tr.txt` yapıştır *(isteğe bağlı)*
+6. **İncelemeye gönder**
+
+İnceleme sürerken paket **kilitlenir**; "Yeni paket yükle" pasif olur. Listeleme
+alanları düzenlenebilir kalır.
+
+---
+
+## Yapılmayanlar ve sebepleri
+
+**Tanıtım videosu.** Mağaza yalnızca **YouTube URL'si** kabul ediyor, dosya yüklenmiyor.
+`docs/img/notestark-flow.gif` akışı gösteriyor ve README ile site için yeterli, ama
+mağazaya konamaz — video isteniyorsa ekran kaydı alınıp YouTube'a yüklenmeli.
+
+**İzin verme akışının videosu.** İstendi, yapılamadı: izin balonu ve
+`chrome://extensions` Chrome'un kendi arayüzünde ve oraya ne eklenti ne tarayıcı
+otomasyonu erişebiliyor. Bu adımların kaydı ancak ekran kaydı ile alınabilir.
+
+---
+
+## ⚠️ ENGEL — gizlilik metni URL'i açılmıyor
+
+`multiappsoftwareservices.com` üzerindeki **TLS sertifikasının süresi dolmuş**.
+21.08.2026'da yeniden ölçüldü, 17.08'deki durum aynen sürüyor:
+
+```
+http://www.multiappsoftwareservices.com/notestark/privacy  → 301 (https'e yönlendiriyor)
+https://www.multiappsoftwareservices.com/                  → SEC_E_CERT_EXPIRED
+```
+
+Yani tarayıcı sayfayı **hiç açmıyor**, uyarı ekranı gösteriyor.
+
+Bunun neden önemli olduğu: veri beyanında **"Website content"** işaretli, o yüzden
+gizlilik metni URL'i zorunlu ve inceleyen kişi o linke **tıklıyor**. Açılmayan bir
+link, eklentinin kendisiyle hiç ilgisi olmayan bir sebeple inceleme kaybettirir.
+
+**Yüklemeden önce yapılacak:** ya sertifika yenilenmeli, ya da gizlilik metni URL'i
+sertifikası çalışan bir yere taşınmalı (GitHub Pages ya da bir Gist bir dakikada
+çözer — metin `PRIVACY.md` içinde, `site/privacy.html`'den üretiliyor).
+
+Ayrıca `site/index.html` içinde **`STORE_URL` yer tutucusu hâlâ doldurulmamış**
+(satır 117, "Add to Chrome" düğmesi) — sayfa yayına alınacaksa o da doldurulmalı.
+
+**Resmî URL (official URL) alanı** ayrıca Google Search Console doğrulaması istiyor;
+o alan zorunlu değil, sertifika sorunu çözülene kadar boş bırakılabilir.
+
+---
+
+## Kayda geçen kararlar
+
+- **Minify edilmiyor.** Minify/obfuscate edilmiş gönderimler daha uzun inceleniyor ve
+  paket 81 KB — kazanılacak bir şey yok.
+- **Depo public**, GPL-3.0 (18.08.2026). Her iki açıklamada da OPEN SOURCE bölümü var.
+- **Sınırlar açıklamada bilerek yazılıyor** (Chrome 105+, çeviri için 138+, etiket ve
+  arama yok, bazı SPA'larda zayıf kalıcılık). Gizlemek tek yıldızlı yorum üretiyor.
